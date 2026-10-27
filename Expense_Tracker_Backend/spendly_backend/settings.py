@@ -68,7 +68,7 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
+    "https://spendly-eight-opal.vercel.app",
 ]
 
 ROOT_URLCONF = 'spendly_backend.urls'
