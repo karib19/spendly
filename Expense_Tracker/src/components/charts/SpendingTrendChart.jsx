@@ -1,4 +1,3 @@
-
 import {
   Area,
   AreaChart,
@@ -8,6 +7,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { parseTransactionDate } from "../../utils/transactionDate";
@@ -20,7 +20,8 @@ function SpendingTrendChart() {
     settings,
   } = useExpense();
 
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+
   const isDark = settings?.theme === "dark";
   const currency = settings?.currency || "BDT";
   const isBangla = language === "bn";
@@ -33,7 +34,9 @@ function SpendingTrendChart() {
     }).format(amount);
 
   const getTransactionType = (transaction) =>
-    String(transaction.type ?? transaction.transaction_type ?? "")
+    String(
+      transaction.type ?? transaction.transaction_type ?? ""
+    )
       .toLowerCase()
       .trim();
 
@@ -75,6 +78,7 @@ function SpendingTrendChart() {
   });
 
   const hasData = data.some((item) => item.amount > 0);
+
   const gridColor = isDark ? "#334155" : "#e2e8f0";
   const axisColor = isDark ? "#94a3b8" : "#64748b";
 
@@ -89,11 +93,11 @@ function SpendingTrendChart() {
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <div className="mb-6">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          {t("reports.spendingTrend")}
+          Spending Trend
         </h2>
 
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("reports.spendingTrendDescription")}
+          Track your daily expenses over the last seven days.
         </p>
       </div>
 
@@ -101,18 +105,18 @@ function SpendingTrendChart() {
         <div className="flex h-64 items-center justify-center">
           <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700 dark:border-slate-600 dark:border-t-white" />
-            {isBangla ? "রিপোর্ট লোড হচ্ছে..." : "Loading report..."}
+            Loading report...
           </div>
         </div>
       ) : transactionsError ? (
         <div className="flex h-64 items-center justify-center text-center">
           <p className="max-w-sm text-sm text-rose-600 dark:text-rose-400">
-            {transactionsError}
+            {String(transactionsError)}
           </p>
         </div>
       ) : !hasData ? (
         <div className="flex h-64 items-center justify-center text-center text-sm text-slate-500 dark:text-slate-400">
-          {t("reports.noData")}
+          No expense data available for the last seven days.
         </div>
       ) : (
         <div className="h-64 w-full">
@@ -129,8 +133,16 @@ function SpendingTrendChart() {
                   x2="0"
                   y2="1"
                 >
-                  <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.02} />
+                  <stop
+                    offset="0%"
+                    stopColor="#f43f5e"
+                    stopOpacity={0.3}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="#f43f5e"
+                    stopOpacity={0.02}
+                  />
                 </linearGradient>
               </defs>
 
@@ -168,7 +180,7 @@ function SpendingTrendChart() {
               <Area
                 type="monotone"
                 dataKey="amount"
-                name={t("transactions.expense")}
+                name="Expenses"
                 stroke="#f43f5e"
                 strokeWidth={2.5}
                 fill="url(#spendingTrendGradient)"

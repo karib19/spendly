@@ -1,4 +1,3 @@
-
 import {
   Lightbulb,
   TrendingDown,
@@ -9,25 +8,23 @@ import {
 
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
-
-import { getCategoryLabel } from "../../utils/translations";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatNumber } from "../../utils/formatNumber";
 
 function SpendingInsight() {
   const {
     transactions = [],
-    settings,
-    transactionsLoading,
-    transactionsError,
+    settings = {},
+    transactionsLoading = false,
+    transactionsError = "",
   } = useExpense();
 
-  const { t, language } = useLanguage();
-  const isBangla = language === "bn";
+  const { language } = useLanguage();
 
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
+  const currency = settings?.currency || "BDT";
 
   const getTransactionType = (transaction) =>
     String(
@@ -145,11 +142,8 @@ function SpendingInsight() {
     ? ((currentExpense - previousExpense) / previousExpense) * 100
     : 0;
 
-  const isSpendingDown =
-    hasPreviousData && percentageChange < 0;
-
-  const isSpendingUp =
-    hasPreviousData && percentageChange > 0;
+  const isSpendingDown = hasPreviousData && percentageChange < 0;
+  const isSpendingUp = hasPreviousData && percentageChange > 0;
 
   const formattedPercentage = formatNumber(
     Number(Math.abs(percentageChange).toFixed(1)),
@@ -157,24 +151,17 @@ function SpendingInsight() {
   );
 
   const monthName = now.toLocaleString(
-    isBangla ? "bn-BD" : "en-US",
+    language === "bn" ? "bn-BD" : "en-US",
     { month: "long", year: "numeric" }
   );
 
   return (
     <div
       className="
-        rounded-2xl
-        border border-slate-200
-        bg-white
-        p-5
-        shadow-sm
-        transition-all duration-200
-        hover:shadow-md
-        dark:border-slate-800
-        dark:bg-slate-900
-        dark:hover:shadow-black/20
-        sm:p-6
+        min-w-0 rounded-2xl border border-slate-200
+        bg-white p-5 shadow-sm transition-all duration-200
+        hover:shadow-md dark:border-slate-800
+        dark:bg-slate-900 dark:hover:shadow-black/20 sm:p-6
       "
     >
       {/* Header */}
@@ -182,21 +169,17 @@ function SpendingInsight() {
         <div
           className="
             flex h-10 w-10 shrink-0 items-center justify-center
-            rounded-xl
-            bg-amber-50
-            text-amber-600
-            transition-transform duration-200
-            hover:scale-105
-            dark:bg-amber-950/40
-            dark:text-amber-400
+            rounded-xl bg-amber-50 text-amber-600
+            transition-transform duration-200 hover:scale-105
+            dark:bg-amber-950/40 dark:text-amber-400
           "
         >
-          <Lightbulb size={20} />
+          <Lightbulb size={20} aria-hidden="true" />
         </div>
 
         <div className="min-w-0">
           <h2 className="font-semibold tracking-tight text-slate-900 dark:text-white">
-            {t("dashboard.spendingInsight")}
+            Spending Insights
           </h2>
 
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
@@ -215,23 +198,19 @@ function SpendingInsight() {
           <RefreshCw
             size={22}
             className="animate-spin text-slate-400"
+            aria-hidden="true"
           />
 
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            {t("common.loading") ||
-              (isBangla
-                ? "খরচের তথ্য লোড হচ্ছে..."
-                : "Loading spending insights...")}
+            Loading spending insights...
           </p>
         </div>
       ) : transactionsError ? (
         /* Error State */
         <div
           className="
-            mt-6 rounded-2xl
-            border border-red-200
-            bg-red-50 p-4
-            dark:border-red-900/50
+            mt-6 rounded-2xl border border-red-200
+            bg-red-50 p-4 dark:border-red-900/50
             dark:bg-red-950/20
           "
           role="alert"
@@ -240,14 +219,12 @@ function SpendingInsight() {
             <AlertCircle
               size={20}
               className="mt-0.5 shrink-0 text-red-500"
+              aria-hidden="true"
             />
 
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-semibold text-red-700 dark:text-red-300">
-                {t("dashboard.transactionsLoadError") ||
-                  (isBangla
-                    ? "খরচের তথ্য লোড করা যায়নি।"
-                    : "Unable to load spending insights.")}
+                Unable to load spending insights.
               </p>
 
               <p className="mt-1 text-xs leading-5 text-red-600 dark:text-red-400">
@@ -260,20 +237,18 @@ function SpendingInsight() {
         /* Empty State */
         <div
           className="
-            mt-6 rounded-2xl
-            border border-slate-100
-            bg-slate-50 p-4
-            animate-[insightIn_300ms_ease-out]
-            dark:border-slate-800
+            mt-6 animate-[insightIn_300ms_ease-out]
+            rounded-2xl border border-slate-100
+            bg-slate-50 p-4 dark:border-slate-800
             dark:bg-slate-800/60
           "
         >
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {t("dashboard.noSpendingData")}
+            No spending data yet
           </p>
 
           <p className="mt-1.5 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {t("dashboard.noSpendingDataDescription")}
+            Add an expense this month to see your spending insights.
           </p>
         </div>
       ) : (
@@ -281,26 +256,20 @@ function SpendingInsight() {
           {/* Current Month Spending */}
           <div
             className="
-              rounded-2xl
-              border border-slate-100
-              bg-slate-50 p-4
               animate-[insightIn_300ms_ease-out]
-              dark:border-slate-800
+              rounded-2xl border border-slate-100
+              bg-slate-50 p-4 dark:border-slate-800
               dark:bg-slate-800/60
             "
           >
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {t("dashboard.thisMonth")}
+                  This Month
                 </p>
 
-                <p className="mt-1.5 text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  {formatCurrency(
-                    currentExpense,
-                    settings.currency,
-                    language
-                  )}
+                <p className="mt-1.5 wrap-break-words text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                  {formatCurrency(currentExpense, currency, language)}
                 </p>
               </div>
 
@@ -308,10 +277,8 @@ function SpendingInsight() {
                 <div
                   className={`
                     flex shrink-0 items-center gap-1.5
-                    rounded-xl px-2.5 py-1.5
-                    text-xs font-bold
-                    transition-transform duration-200
-                    hover:scale-105
+                    rounded-xl px-2.5 py-1.5 text-xs font-bold
+                    transition-transform duration-200 hover:scale-105
                     ${
                       isSpendingDown
                         ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
@@ -322,9 +289,9 @@ function SpendingInsight() {
                   `}
                 >
                   {isSpendingDown ? (
-                    <TrendingDown size={14} />
+                    <TrendingDown size={14} aria-hidden="true" />
                   ) : isSpendingUp ? (
-                    <TrendingUp size={14} />
+                    <TrendingUp size={14} aria-hidden="true" />
                   ) : null}
 
                   {percentageChange > 0
@@ -340,10 +307,10 @@ function SpendingInsight() {
             {hasPreviousData && (
               <p className="mt-2.5 text-xs leading-5 text-slate-500 dark:text-slate-400">
                 {isSpendingDown
-                  ? t("dashboard.spendingComparedDown")
+                  ? "You're spending less than last month."
                   : isSpendingUp
-                    ? t("dashboard.spendingComparedUp")
-                    : t("dashboard.spendingComparedSame")}
+                    ? "You're spending more than last month."
+                    : "Your spending is unchanged from last month."}
               </p>
             )}
           </div>
@@ -352,33 +319,29 @@ function SpendingInsight() {
           {topCategory && (
             <div
               className="
-                flex items-center justify-between gap-4
+                flex animate-[insightIn_350ms_ease-out]
+                items-center justify-between gap-4
                 border-t border-slate-100 pt-5
-                animate-[insightIn_350ms_ease-out]
                 dark:border-slate-800
               "
             >
               <div className="min-w-0">
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  {t("dashboard.topSpendingCategory")}
+                  Top Spending Category
                 </p>
 
-                <p className="mt-1.5 truncate text-sm font-semibold text-slate-900 dark:text-white">
-                  {getCategoryLabel(topCategory[0], t)}
+                <p className="mt-1.5 wrap-break-words text-sm font-semibold capitalize text-slate-900 dark:text-white">
+                  {topCategory[0]}
                 </p>
               </div>
 
               <div className="shrink-0 text-right">
                 <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                  {formatCurrency(
-                    topCategory[1],
-                    settings.currency,
-                    language
-                  )}
+                  {formatCurrency(topCategory[1], currency, language)}
                 </p>
 
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  {t("dashboard.categorySpent")}
+                  Total spent
                 </p>
               </div>
             </div>

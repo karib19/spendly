@@ -22,10 +22,7 @@ const currencyMap = {
 };
 
 export function getCurrencySymbol(currency = "BDT") {
-  return (
-    currencyMap[currency]?.symbol ||
-    currencyMap.BDT.symbol
-  );
+  return currencyMap[currency]?.symbol || currencyMap.BDT.symbol;
 }
 
 export function formatCurrency(
@@ -33,17 +30,12 @@ export function formatCurrency(
   currency = "BDT",
   language = "en"
 ) {
-  const config =
-    currencyMap[currency] || currencyMap.BDT;
-
+  const config = currencyMap[currency] || currencyMap.BDT;
   const numericAmount = Number(amount) || 0;
 
-  const locale =
-    language === "bn"
-      ? "bn-BD"
-      : config.locale;
+  const locale = language === "bn" ? "bn-BD" : config.locale;
 
-  return `${config.symbol}${numericAmount.toLocaleString(
-    locale
-  )}`;
+  return `${config.symbol}${numericAmount.toLocaleString(locale, {
+    maximumFractionDigits: 2,
+  })}`;
 }

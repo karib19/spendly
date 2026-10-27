@@ -1,8 +1,7 @@
-
 import { WalletCards } from "lucide-react";
+
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
-import { getCategoryLabel } from "../../utils/translations";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatNumber } from "../../utils/formatNumber";
 
@@ -10,21 +9,22 @@ function BudgetProgress() {
   const {
     budgets = [],
     transactions = [],
-    settings,
+    settings = {},
     budgetsLoading = false,
     budgetsError = "",
     transactionsLoading = false,
     transactionsError = "",
   } = useExpense();
 
-  const { t, language } = useLanguage();
-  const isBangla = language === "bn";
+  const { language } = useLanguage();
 
   const now = new Date();
 
   const currentMonth = `${now.getFullYear()}-${String(
     now.getMonth() + 1
   ).padStart(2, "0")}`;
+
+  const currency = settings?.currency || "BDT";
 
   const getTransactionType = (transaction) =>
     String(
@@ -85,14 +85,12 @@ function BudgetProgress() {
     const normalizedCategory = normalizeCategory(category);
 
     return transactions
-      .filter((transaction) => {
-        return (
+      .filter(
+        (transaction) =>
           getTransactionType(transaction) === "expense" &&
-          normalizeCategory(transaction.category) ===
-            normalizedCategory &&
+          normalizeCategory(transaction.category) === normalizedCategory &&
           getTransactionMonth(transaction.date) === currentMonth
-        );
-      })
+      )
       .reduce(
         (total, transaction) =>
           total + Math.max(0, Number(transaction.amount) || 0),
@@ -106,7 +104,7 @@ function BudgetProgress() {
     0
   );
 
-  // Count each category's spending only once in the overall total.
+  // Avoid counting a category's spending multiple times.
   const uniqueCategories = [
     ...new Set(
       currentMonthBudgets.map((budget) =>
@@ -150,12 +148,12 @@ function BudgetProgress() {
 
   const renderStatus = (message, isError = false) => (
     <div
+      role={isError ? "alert" : "status"}
       className={`mt-5 rounded-xl px-4 py-5 text-center text-sm ${
         isError
           ? "bg-rose-50 text-rose-600 dark:bg-rose-950/30 dark:text-rose-400"
           : "bg-slate-50 text-slate-500 dark:bg-slate-800/60 dark:text-slate-400"
       }`}
-      role={isError ? "alert" : "status"}
     >
       {message}
     </div>
@@ -182,65 +180,51 @@ function BudgetProgress() {
                 dark:bg-slate-800 dark:text-slate-300
               "
             >
-              <WalletCards size={18} />
+              <WalletCards size={18} aria-hidden="true" />
             </div>
 
             <h2 className="font-semibold tracking-tight text-slate-900 dark:text-white">
-              {t("dashboard.monthlyBudget")}
+              Monthly Budget
             </h2>
           </div>
 
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            {t("dashboard.budgetOverview")}
+            Track your spending against your budget.
           </p>
         </div>
 
         {currentMonthBudgets.length > 0 && (
           <div className="shrink-0 text-right">
             <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
-              {t("dashboard.spent")}
+              Spent
             </p>
 
             <p className="mt-1 text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-              {formatCurrency(totalSpent, settings.currency, language)}
+              {formatCurrency(totalSpent, currency, language)}
             </p>
           </div>
         )}
       </div>
 
-      {/* Loading state */}
+      {/* Loading and error states */}
       {budgetsLoading || transactionsLoading ? (
-        renderStatus(
-          isBangla
-            ? "বাজেটের তথ্য লোড হচ্ছে..."
-            : "Loading budget information..."
-        )
+        renderStatus("Loading budget information...")
       ) : budgetsError ? (
-        renderStatus(
-          isBangla
-            ? "বাজেটের তথ্য লোড করা যায়নি। আবার চেষ্টা করো।"
-            : "Unable to load budgets. Please try again.",
-          true
-        )
+        renderStatus("Unable to load budgets. Please try again.", true)
       ) : transactionsError ? (
         renderStatus(
-          isBangla
-            ? "লেনদেনের তথ্য লোড করা যায়নি। খরচের হিসাব দেখাতে সমস্যা হতে পারে।"
-            : "Unable to load transactions. Spending totals may be incomplete.",
+          "Unable to load transactions. Spending totals may be incomplete.",
           true
         )
       ) : currentMonthBudgets.length > 0 ? (
         <>
-          {/* Overall budget */}
+          {/* Overall budget progress */}
           <div className="mt-6">
             <div className="flex items-end justify-between gap-4">
-              <div className="min-w-0">
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {formatCurrency(totalSpent, settings.currency, language)}{" "}
-                  {t("dashboard.of")}{" "}
-                  {formatCurrency(totalBudget, settings.currency, language)}
-                </p>
-              </div>
+              <p className="min-w-0 text-xs text-slate-500 dark:text-slate-400">
+                {formatCurrency(totalSpent, currency, language)} of{" "}
+                {formatCurrency(totalBudget, currency, language)}
+              </p>
 
               <span
                 className={`shrink-0 text-sm font-bold ${overallTone.text}`}
@@ -249,7 +233,17 @@ function BudgetProgress() {
               </span>
             </div>
 
-            <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <div
+              className="mt-2.5 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+              role="progressbar"
+              aria-label="Overall budget usage"
+              aria-valuenow={Math.min(
+                Math.max(Math.round(overallPercentage), 0),
+                100
+              )}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
               <div
                 className={`h-full rounded-full transition-[width] duration-700 ease-out ${overallTone.bar}`}
                 style={{
@@ -287,17 +281,12 @@ function BudgetProgress() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-slate-700 transition-colors group-hover:text-slate-900 dark:text-slate-300 dark:group-hover:text-white">
-                        {getCategoryLabel(budget.category, t)}
+                        {budget.category || "Uncategorized"}
                       </p>
 
                       <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                        {formatCurrency(spent, settings.currency, language)}{" "}
-                        {t("dashboard.of")}{" "}
-                        {formatCurrency(
-                          budgetAmount,
-                          settings.currency,
-                          language
-                        )}
+                        {formatCurrency(spent, currency, language)} of{" "}
+                        {formatCurrency(budgetAmount, currency, language)}
                       </p>
                     </div>
 
@@ -316,19 +305,29 @@ function BudgetProgress() {
                         {remaining >= 0
                           ? `${formatCurrency(
                               remaining,
-                              settings.currency,
+                              currency,
                               language
-                            )} ${t("dashboard.remaining")}`
+                            )} remaining`
                           : `${formatCurrency(
                               Math.abs(remaining),
-                              settings.currency,
+                              currency,
                               language
-                            )} ${t("budgets.overBudget")}`}
+                            )} over budget`}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                  <div
+                    className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+                    role="progressbar"
+                    aria-label={`${budget.category || "Category"} budget usage`}
+                    aria-valuenow={Math.min(
+                      Math.max(Math.round(percentage), 0),
+                      100
+                    )}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
                     <div
                       className={`h-full rounded-full transition-[width] duration-700 ease-out ${tone.bar}`}
                       style={{
@@ -346,17 +345,15 @@ function BudgetProgress() {
 
           {currentMonthBudgets.length > 4 && (
             <p className="mt-5 text-center text-xs font-medium text-slate-400 dark:text-slate-500">
-              +{formatNumber(currentMonthBudgets.length - 4, language)}{" "}
-              {t("budgets.categories")}
+              +{formatNumber(currentMonthBudgets.length - 4, language)} more
+              budget categories
             </p>
           )}
 
           {/* Remaining budget */}
-          <div className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 dark:border-slate-800">
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
             <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-              {totalRemaining >= 0
-                ? t("dashboard.remaining")
-                : t("budgets.overBudget")}
+              {totalRemaining >= 0 ? "Remaining Budget" : "Over Budget"}
             </span>
 
             <span
@@ -368,7 +365,7 @@ function BudgetProgress() {
             >
               {formatCurrency(
                 Math.abs(totalRemaining),
-                settings.currency,
+                currency,
                 language
               )}
             </span>
@@ -381,15 +378,16 @@ function BudgetProgress() {
             <WalletCards
               size={20}
               className="text-slate-400 dark:text-slate-500"
+              aria-hidden="true"
             />
           </div>
 
           <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            {t("budgets.noBudgets")}
+            No budgets yet
           </p>
 
           <p className="mx-auto mt-1.5 max-w-xs text-xs leading-5 text-slate-400 dark:text-slate-500">
-            {t("budgets.noBudgetsDescription")}
+            Create a budget to track your spending by category.
           </p>
         </div>
       )}

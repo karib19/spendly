@@ -1,21 +1,64 @@
+
 import { useEffect, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, X } from "lucide-react";
-
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 
+const translations = {
+  en: {
+    title: "Add New Category",
+    subtitle: "Create a category to organize your finances.",
+    close: "Close",
+    categoryType: "Category Type",
+    expense: "Expense",
+    income: "Income",
+    moneySpent: "Money you spend",
+    moneyReceived: "Money you receive",
+    categoryName: "Category Name",
+    placeholder: "e.g. Groceries, Salary",
+    enterName: "Please enter a category name.",
+    duplicate: (name) => `The category "${name}" already exists.`,
+    categoryAvailable: "This category will be available for",
+    expenseTransactions: "expense",
+    incomeTransactions: "income",
+    transactions: "transactions.",
+    cancel: "Cancel",
+    addCategory: "Add Category",
+  },
+  bn: {
+    title: "নতুন ক্যাটাগরি যোগ করুন",
+    subtitle: "আপনার আয়-ব্যয়ের হিসাব গুছিয়ে রাখতে একটি ক্যাটাগরি তৈরি করুন।",
+    close: "বন্ধ করুন",
+    categoryType: "ক্যাটাগরির ধরন",
+    expense: "খরচ",
+    income: "আয়",
+    moneySpent: "আপনার খরচের টাকা",
+    moneyReceived: "আপনি যে টাকা পান",
+    categoryName: "ক্যাটাগরির নাম",
+    placeholder: "যেমন: বাজার, বেতন",
+    enterName: "অনুগ্রহ করে ক্যাটাগরির নাম লিখুন।",
+    duplicate: (name) => `"${name}" ক্যাটাগরিটি আগে থেকেই আছে।`,
+    categoryAvailable: "এই ক্যাটাগরিটি ব্যবহার করা যাবে",
+    expenseTransactions: "খরচের",
+    incomeTransactions: "আয়ের",
+    transactions: "লেনদেনের জন্য।",
+    cancel: "বাতিল",
+    addCategory: "ক্যাটাগরি যোগ করুন",
+  },
+};
+
 function CategoryForm({ isOpen, onClose }) {
   const { addCategory } = useExpense();
-  const { t } = useLanguage();
+  const { language } = useLanguage();
+
+  const text = translations[language === "bn" ? "bn" : "en"];
 
   const [type, setType] = useState("expense");
   const [categoryName, setCategoryName] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
     setType("expense");
     setCategoryName("");
@@ -23,9 +66,7 @@ function CategoryForm({ isOpen, onClose }) {
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
+    if (!isOpen) return;
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -40,9 +81,7 @@ function CategoryForm({ isOpen, onClose }) {
     };
   }, [isOpen, onClose]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   const handleSubmit = (event) => {
     event.preventDefault();
@@ -50,16 +89,14 @@ function CategoryForm({ isOpen, onClose }) {
     const normalizedName = categoryName.trim();
 
     if (!normalizedName) {
-      setError(t("categoryForm.categoryName"));
+      setError(text.enterName);
       return;
     }
 
     const added = addCategory(type, normalizedName);
 
     if (!added) {
-      setError(
-        `"${normalizedName}" ${t("categoryForm.alreadyExists")}`
-      );
+      setError(text.duplicate(normalizedName));
       return;
     }
 
@@ -74,7 +111,11 @@ function CategoryForm({ isOpen, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md animate-[fadeIn_180ms_ease-out]"
+      className="
+        fixed inset-0 z-50 flex items-center justify-center
+        bg-slate-950/60 p-4 backdrop-blur-md
+        animate-[fadeIn_180ms_ease-out]
+      "
       onMouseDown={handleBackdropClick}
       role="dialog"
       aria-modal="true"
@@ -82,14 +123,11 @@ function CategoryForm({ isOpen, onClose }) {
     >
       <div
         className="
-          w-full max-w-md overflow-hidden
-          rounded-3xl
-          border border-slate-200/80
-          bg-white
+          w-full max-w-md overflow-hidden rounded-3xl
+          border border-slate-200/80 bg-white
           shadow-[0_25px_80px_rgba(15,23,42,0.25)]
           animate-[modalIn_220ms_ease-out]
-          dark:border-slate-700/80
-          dark:bg-slate-900
+          dark:border-slate-700/80 dark:bg-slate-900
           dark:shadow-[0_25px_80px_rgba(0,0,0,0.45)]
         "
       >
@@ -101,11 +139,11 @@ function CategoryForm({ isOpen, onClose }) {
                 id="category-form-title"
                 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white"
               >
-                {t("categoryForm.addTitle")}
+                {text.title}
               </h2>
 
               <p className="mt-1.5 text-sm leading-5 text-slate-500 dark:text-slate-400">
-                {t("categoryForm.addDescription")}
+                {text.subtitle}
               </p>
             </div>
 
@@ -114,18 +152,15 @@ function CategoryForm({ isOpen, onClose }) {
               onClick={onClose}
               className="
                 flex h-9 w-9 shrink-0 items-center justify-center
-                rounded-xl
-                text-slate-400
-                transition-all duration-200
-                hover:rotate-90
-                hover:bg-slate-100
-                hover:text-slate-700
+                rounded-xl text-slate-400
+                transition-all duration-200 hover:rotate-90
+                hover:bg-slate-100 hover:text-slate-700
                 active:scale-90
-                dark:text-slate-500
-                dark:hover:bg-slate-800
+                dark:text-slate-500 dark:hover:bg-slate-800
                 dark:hover:text-white
               "
-              aria-label={t("categoryForm.close")}
+              aria-label={text.close}
+              title={text.close}
             >
               <X size={19} />
             </button>
@@ -133,14 +168,11 @@ function CategoryForm({ isOpen, onClose }) {
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6 p-5 sm:p-6"
-        >
+        <form onSubmit={handleSubmit} className="space-y-6 p-5 sm:p-6">
           {/* Category Type */}
           <div>
             <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-              {t("categoryForm.categoryType")}
+              {text.categoryType}
             </label>
 
             <div className="grid grid-cols-2 gap-3">
@@ -151,10 +183,10 @@ function CategoryForm({ isOpen, onClose }) {
                   setType("expense");
                   setError("");
                 }}
+                aria-pressed={type === "expense"}
                 className={`
-                  group flex items-center gap-3 rounded-2xl border
-                  p-4 text-left
-                  transition-all duration-200
+                  group flex items-center gap-3 rounded-2xl
+                  border p-4 text-left transition-all duration-200
                   active:scale-[0.98]
                   ${
                     type === "expense"
@@ -165,8 +197,8 @@ function CategoryForm({ isOpen, onClose }) {
               >
                 <span
                   className={`
-                    flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
-                    transition-colors
+                    flex h-10 w-10 shrink-0 items-center justify-center
+                    rounded-xl transition-colors
                     ${
                       type === "expense"
                         ? "bg-rose-100 text-rose-600 dark:bg-rose-950/70 dark:text-rose-400"
@@ -179,7 +211,7 @@ function CategoryForm({ isOpen, onClose }) {
 
                 <span>
                   <span className="block text-sm font-semibold">
-                    {t("categoryForm.expense")}
+                    {text.expense}
                   </span>
 
                   <span
@@ -192,7 +224,7 @@ function CategoryForm({ isOpen, onClose }) {
                       }
                     `}
                   >
-                    {t("categoryForm.transactions")}
+                    {text.moneySpent}
                   </span>
                 </span>
               </button>
@@ -204,10 +236,10 @@ function CategoryForm({ isOpen, onClose }) {
                   setType("income");
                   setError("");
                 }}
+                aria-pressed={type === "income"}
                 className={`
-                  group flex items-center gap-3 rounded-2xl border
-                  p-4 text-left
-                  transition-all duration-200
+                  group flex items-center gap-3 rounded-2xl
+                  border p-4 text-left transition-all duration-200
                   active:scale-[0.98]
                   ${
                     type === "income"
@@ -218,8 +250,8 @@ function CategoryForm({ isOpen, onClose }) {
               >
                 <span
                   className={`
-                    flex h-10 w-10 shrink-0 items-center justify-center rounded-xl
-                    transition-colors
+                    flex h-10 w-10 shrink-0 items-center justify-center
+                    rounded-xl transition-colors
                     ${
                       type === "income"
                         ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/70 dark:text-emerald-400"
@@ -232,7 +264,7 @@ function CategoryForm({ isOpen, onClose }) {
 
                 <span>
                   <span className="block text-sm font-semibold">
-                    {t("categoryForm.income")}
+                    {text.income}
                   </span>
 
                   <span
@@ -245,7 +277,7 @@ function CategoryForm({ isOpen, onClose }) {
                       }
                     `}
                   >
-                    {t("categoryForm.transactions")}
+                    {text.moneyReceived}
                   </span>
                 </span>
               </button>
@@ -258,7 +290,7 @@ function CategoryForm({ isOpen, onClose }) {
               htmlFor="category-name"
               className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
             >
-              {t("categoryForm.categoryName")}
+              {text.categoryName}
             </label>
 
             <input
@@ -269,33 +301,36 @@ function CategoryForm({ isOpen, onClose }) {
                 setCategoryName(event.target.value);
                 setError("");
               }}
-              placeholder={t("categoryForm.categoryPlaceholder")}
+              placeholder={text.placeholder}
               autoFocus
               maxLength={50}
+              required
               className={`
-                w-full rounded-xl border
-                bg-slate-50 px-4 py-3
-                text-sm text-slate-900
-                outline-none
+                w-full rounded-xl border bg-slate-50 px-4 py-3
+                text-sm text-slate-900 outline-none
                 transition-all duration-200
-                placeholder:text-slate-400
-                hover:border-slate-300
-                focus:bg-white
-                focus:ring-4
-                dark:bg-slate-800/80
-                dark:text-white
-                dark:hover:border-slate-600
+                placeholder:text-slate-400 hover:border-slate-300
+                focus:bg-white dark:bg-slate-800/80
+                dark:text-white dark:hover:border-slate-600
                 dark:focus:bg-slate-800
                 ${
                   error
-                    ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10"
-                    : "border-slate-200 focus:border-slate-400 focus:ring-slate-900/5 dark:border-slate-700 dark:focus:border-slate-500 dark:focus:ring-white/5"
+                    ? "border-rose-400 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10"
+                    : "border-slate-200 focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5 dark:border-slate-700 dark:focus:border-slate-500 dark:focus:ring-white/5"
                 }
               `}
             />
 
             {error && (
-              <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs font-medium text-rose-600 animate-[fadeIn_160ms_ease-out] dark:bg-rose-950/30 dark:text-rose-400">
+              <p
+                role="alert"
+                className="
+                  mt-2 rounded-lg bg-rose-50 px-3 py-2
+                  text-xs font-medium text-rose-600
+                  animate-[fadeIn_160ms_ease-out]
+                  dark:bg-rose-950/30 dark:text-rose-400
+                "
+              >
                 {error}
               </p>
             )}
@@ -304,13 +339,19 @@ function CategoryForm({ isOpen, onClose }) {
           {/* Description */}
           <div className="rounded-xl bg-slate-50 px-4 py-3 dark:bg-slate-800/70">
             <p className="text-xs leading-5 text-slate-500 dark:text-slate-400">
-              {t("categoryForm.availableDescription")}{" "}
-              <span className="font-semibold text-slate-700 dark:text-slate-200">
+              {text.categoryAvailable}{" "}
+              <span
+                className={`font-semibold ${
+                  type === "expense"
+                    ? "text-rose-600 dark:text-rose-400"
+                    : "text-emerald-600 dark:text-emerald-400"
+                }`}
+              >
                 {type === "expense"
-                  ? t("categoryForm.expense")
-                  : t("categoryForm.income")}
+                  ? text.expenseTransactions
+                  : text.incomeTransactions}
               </span>{" "}
-              {t("categoryForm.transactions")}
+              {text.transactions}
             </p>
           </div>
 
@@ -320,44 +361,30 @@ function CategoryForm({ isOpen, onClose }) {
               type="button"
               onClick={onClose}
               className="
-                rounded-xl
-                border border-slate-200
-                px-4 py-3
-                text-sm font-semibold
-                text-slate-700
-                transition-all duration-200
-                hover:border-slate-300
-                hover:bg-slate-50
-                active:scale-[0.98]
-                dark:border-slate-700
-                dark:text-slate-200
+                rounded-xl border border-slate-200 px-4 py-3
+                text-sm font-semibold text-slate-700
+                transition-all duration-200 hover:border-slate-300
+                hover:bg-slate-50 active:scale-[0.98]
+                dark:border-slate-700 dark:text-slate-200
                 dark:hover:bg-slate-800
               "
             >
-              {t("categoryForm.cancel")}
+              {text.cancel}
             </button>
 
             <button
               type="submit"
               className="
-                rounded-xl
-                bg-slate-900
-                px-4 py-3
-                text-sm font-semibold
-                text-white
-                shadow-sm
-                transition-all duration-200
-                hover:-translate-y-0.5
-                hover:bg-slate-800
-                hover:shadow-md
-                active:translate-y-0
-                active:scale-[0.98]
-                dark:bg-slate-100
-                dark:text-slate-900
+                rounded-xl bg-slate-900 px-4 py-3
+                text-sm font-semibold text-white shadow-sm
+                transition-all duration-200 hover:-translate-y-0.5
+                hover:bg-slate-800 hover:shadow-md
+                active:translate-y-0 active:scale-[0.98]
+                dark:bg-slate-100 dark:text-slate-900
                 dark:hover:bg-white
               "
             >
-              {t("categoryForm.addCategory")}
+              {text.addCategory}
             </button>
           </div>
         </form>
@@ -368,7 +395,6 @@ function CategoryForm({ isOpen, onClose }) {
           from {
             opacity: 0;
           }
-
           to {
             opacity: 1;
           }
@@ -379,7 +405,6 @@ function CategoryForm({ isOpen, onClose }) {
             opacity: 0;
             transform: translateY(12px) scale(0.98);
           }
-
           to {
             opacity: 1;
             transform: translateY(0) scale(1);

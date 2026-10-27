@@ -7,48 +7,33 @@ import {
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 
-import { getCategoryLabel } from "../../utils/translations";
 import { formatNumber } from "../../utils/formatNumber";
 
-function CategoryCard({
-  category,
-  type,
-  onDelete,
-}) {
+function CategoryCard({ category, type, onDelete }) {
   const { transactions } = useExpense();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
-  const transactionCount = transactions.filter(
-    (transaction) =>
+  const transactionCount = transactions.filter((transaction) => {
+    const transactionType =
+      transaction.type || transaction.transaction_type;
+
+    return (
       transaction.category === category &&
-      transaction.type === type
-  ).length;
+      transactionType === type
+    );
+  }).length;
 
   const isExpense = type === "expense";
-
-  const translatedCategory = getCategoryLabel(
-    category,
-    t
-  );
 
   return (
     <div
       className="
-        group
-        flex items-center justify-between gap-4
-        rounded-2xl
-        border border-slate-200
-        bg-white
-        p-4
-        shadow-sm
-        transition-all duration-200
-        hover:-translate-y-0.5
-        hover:border-slate-300
-        hover:shadow-md
-        dark:border-slate-800
-        dark:bg-slate-900
-        dark:hover:border-slate-700
-        dark:hover:shadow-black/20
+        group flex items-center justify-between gap-4
+        rounded-2xl border border-slate-200 bg-white p-4
+        shadow-sm transition-all duration-200
+        hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md
+        dark:border-slate-800 dark:bg-slate-900
+        dark:hover:border-slate-700 dark:hover:shadow-black/20
       "
     >
       {/* Category Info */}
@@ -56,8 +41,7 @@ function CategoryCard({
         <div
           className={`
             flex h-11 w-11 shrink-0 items-center justify-center
-            rounded-xl
-            transition-transform duration-200
+            rounded-xl transition-transform duration-200
             group-hover:scale-105
             ${
               isExpense
@@ -75,14 +59,12 @@ function CategoryCard({
 
         <div className="min-w-0">
           <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-            {translatedCategory}
+            {category}
           </h3>
 
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {formatNumber(transactionCount, language)}{" "}
-            {transactionCount === 1
-              ? t("categories.transaction")
-              : t("categories.transactions")}
+            {transactionCount === 1 ? "transaction" : "transactions"}
           </p>
         </div>
       </div>
@@ -90,20 +72,18 @@ function CategoryCard({
       {/* Delete */}
       <button
         type="button"
-        onClick={() => onDelete(category)}
+        onClick={() => onDelete?.(category)}
         className="
           flex h-9 w-9 shrink-0 items-center justify-center
-          rounded-xl
-          text-slate-400
+          rounded-xl text-slate-400
           transition-all duration-200
-          hover:bg-rose-50
-          hover:text-rose-600
+          hover:bg-rose-50 hover:text-rose-600
           active:scale-90
           dark:text-slate-500
-          dark:hover:bg-rose-950/50
-          dark:hover:text-rose-400
+          dark:hover:bg-rose-950/50 dark:hover:text-rose-400
         "
-        aria-label={`${t("categories.delete")} ${translatedCategory}`}
+        aria-label={`Delete ${category}`}
+        title={`Delete ${category}`}
       >
         <Trash2 size={17} />
       </button>

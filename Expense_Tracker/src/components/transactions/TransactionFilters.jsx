@@ -1,9 +1,5 @@
 import { Search, X } from "lucide-react";
 
-import { useLanguage } from "../../context/LanguageContext";
-
-import { getCategoryLabel } from "../../utils/translations";
-
 function TransactionFilters({
   search,
   setSearch,
@@ -13,8 +9,6 @@ function TransactionFilters({
   setCategoryFilter,
   categories = [],
 }) {
-  const { t } = useLanguage();
-
   const hasFilters =
     search.trim() !== "" ||
     typeFilter !== "all" ||
@@ -66,15 +60,9 @@ function TransactionFilters({
           <input
             type="search"
             value={search}
-            onChange={(event) =>
-              setSearch(event.target.value)
-            }
-            placeholder={t(
-              "filters.searchPlaceholder"
-            )}
-            aria-label={t(
-              "filters.searchPlaceholder"
-            )}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search transactions..."
+            aria-label="Search transactions"
             className="
               w-full
               rounded-xl
@@ -96,7 +84,6 @@ function TransactionFilters({
               dark:bg-slate-800
               dark:text-white
               dark:hover:border-slate-600
-              dark:hover:bg-slate-750
               dark:focus:border-slate-500
               dark:focus:bg-slate-800
               dark:focus:ring-white/5
@@ -107,10 +94,8 @@ function TransactionFilters({
         {/* Type */}
         <select
           value={typeFilter}
-          onChange={(event) =>
-            setTypeFilter(event.target.value)
-          }
-          aria-label={t("filters.type")}
+          onChange={(event) => setTypeFilter(event.target.value)}
+          aria-label="Filter by transaction type"
           className="
             min-w-0
             rounded-xl
@@ -134,26 +119,16 @@ function TransactionFilters({
             dark:focus:ring-white/5
           "
         >
-          <option value="all">
-            {t("filters.allTypes")}
-          </option>
-
-          <option value="income">
-            {t("filters.income")}
-          </option>
-
-          <option value="expense">
-            {t("filters.expense")}
-          </option>
+          <option value="all">All Types</option>
+          <option value="income">Income</option>
+          <option value="expense">Expense</option>
         </select>
 
         {/* Category */}
         <select
           value={categoryFilter}
-          onChange={(event) =>
-            setCategoryFilter(event.target.value)
-          }
-          aria-label={t("filters.category")}
+          onChange={(event) => setCategoryFilter(event.target.value)}
+          aria-label="Filter by category"
           className="
             min-w-0
             rounded-xl
@@ -177,16 +152,11 @@ function TransactionFilters({
             dark:focus:ring-white/5
           "
         >
-          <option value="all">
-            {t("filters.allCategories")}
-          </option>
+          <option value="all">All Categories</option>
 
           {categories.map((category) => (
-            <option
-              key={category}
-              value={category}
-            >
-              {getCategoryLabel(category, t)}
+            <option key={category} value={category}>
+              {category}
             </option>
           ))}
         </select>
@@ -208,7 +178,7 @@ function TransactionFilters({
           "
         >
           <p className="text-[11px] font-medium text-slate-400 dark:text-slate-500">
-            {t("common.filtersApplied")}
+            Filters applied
           </p>
 
           <button
@@ -233,7 +203,7 @@ function TransactionFilters({
             "
           >
             <X size={14} />
-            {t("common.clearFilters")}
+            Clear Filters
           </button>
         </div>
       )}

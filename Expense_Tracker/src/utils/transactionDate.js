@@ -1,4 +1,3 @@
-
 export function parseTransactionDate(value) {
   if (!value) return null;
 

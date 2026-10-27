@@ -64,3 +64,43 @@ html.dark textarea,
 html.dark select {
   color-scheme: dark;
 }
+
+
+/* Bengali text rendering */
+body:lang(bn),
+html[lang="bn"] body {
+  font-family:
+    "Noto Sans Bengali",
+    "Hind Siliguri",
+    Inter,
+    system-ui,
+    sans-serif;
+}
+
+/* Keep translated UI transitions subtle */
+.translation-ready {
+  text-rendering: optimizeLegibility;
+}
+
+.translation-ready input,
+.translation-ready textarea,
+.translation-ready select,
+.translation-ready button {
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Prevent awkward horizontal overflow on small screens */
+#root {
+  min-width: 0;
+  width: 100%;
+}
+
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+

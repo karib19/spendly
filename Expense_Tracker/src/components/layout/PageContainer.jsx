@@ -5,16 +5,14 @@ function PageContainer({
   return (
     <main
       className={`
-        min-h-[calc(100vh-5rem)]
+        min-h-[calc(100dvh-5rem)]
+        min-w-0
         px-4
-        py-6
+        pt-6
         pb-24
-        transition-all
-        duration-300
-        ease-in-out
+        transition-[margin] duration-300 ease-in-out
         sm:px-6
-        sm:py-8
-        md:min-h-[calc(100vh-5rem)]
+        sm:pt-8
         md:px-8
         md:pb-8
         ${
@@ -24,7 +22,7 @@ function PageContainer({
         }
       `}
     >
-      <div className="mx-auto w-full max-w-[1600px]">
+      <div className="mx-auto w-full max-w-[1600px] min-w-0">
         {children}
       </div>
     </main>

@@ -1,4 +1,3 @@
-
 import {
   createContext,
   useContext,
@@ -6,56 +5,46 @@ import {
   useState,
 } from "react";
 
-import { translations } from "../utils/translations";
+import { startGlobalTranslation } from "../utils/domTranslator";
 
-const LanguageContext = createContext();
-
-const supportedLanguages = Object.keys(
-  translations
-);
+const LanguageContext = createContext(null);
 
 function getInitialLanguage() {
-  const savedLanguage =
-    localStorage.getItem("spendly_language");
-
-  if (
-    savedLanguage &&
-    supportedLanguages.includes(savedLanguage)
-  ) {
-    return savedLanguage;
+  try {
+    return localStorage.getItem("spendly_language") === "bn"
+      ? "bn"
+      : "en";
+  } catch {
+    return "en";
   }
-
-  return "en";
 }
 
 export function LanguageProvider({ children }) {
-  const [language, setLanguage] =
-    useState(getInitialLanguage);
+  const [language, setLanguage] = useState(getInitialLanguage);
 
   useEffect(() => {
-    localStorage.setItem(
-      "spendly_language",
-      language
-    );
+    try {
+      localStorage.setItem("spendly_language", language);
+    } catch (error) {
+      console.error("Could not save language preference:", error);
+    }
   }, [language]);
 
-  const t = (key) => {
-    const keys = key.split(".");
-    let value = translations[language];
+  useEffect(() => {
+    const stopTranslation = startGlobalTranslation(language);
 
-    for (const currentKey of keys) {
-      value = value?.[currentKey];
-    }
-
-    return value || key;
-  };
+    return () => {
+      if (typeof stopTranslation === "function") {
+        stopTranslation();
+      }
+    };
+  }, [language]);
 
   return (
     <LanguageContext.Provider
       value={{
         language,
         setLanguage,
-        t,
       }}
     >
       {children}

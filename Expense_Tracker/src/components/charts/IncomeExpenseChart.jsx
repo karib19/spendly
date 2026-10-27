@@ -1,4 +1,3 @@
-
 import {
   Bar,
   BarChart,
@@ -9,6 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 import { parseTransactionDate } from "../../utils/transactionDate";
@@ -21,7 +21,8 @@ function IncomeExpenseChart() {
     settings,
   } = useExpense();
 
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
+
   const isDark = settings?.theme === "dark";
   const currency = settings?.currency || "BDT";
   const isBangla = language === "bn";
@@ -34,7 +35,9 @@ function IncomeExpenseChart() {
     }).format(amount);
 
   const getTransactionType = (transaction) =>
-    String(transaction.type ?? transaction.transaction_type ?? "")
+    String(
+      transaction.type ?? transaction.transaction_type ?? ""
+    )
       .toLowerCase()
       .trim();
 
@@ -113,11 +116,11 @@ function IncomeExpenseChart() {
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <div className="mb-6">
         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-          {t("reports.incomeExpense")}
+          Income vs. Expenses
         </h2>
 
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {t("reports.incomeExpenseDescription")}
+          Compare your monthly income and expenses over the last six months.
         </p>
       </div>
 
@@ -125,18 +128,18 @@ function IncomeExpenseChart() {
         <div className="flex h-72 items-center justify-center">
           <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
             <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-700 dark:border-slate-600 dark:border-t-white" />
-            {isBangla ? "রিপোর্ট লোড হচ্ছে..." : "Loading report..."}
+            Loading report...
           </div>
         </div>
       ) : transactionsError ? (
         <div className="flex h-72 items-center justify-center text-center">
           <p className="max-w-sm text-sm text-rose-600 dark:text-rose-400">
-            {transactionsError}
+            {String(transactionsError)}
           </p>
         </div>
       ) : !hasData ? (
         <div className="flex h-72 items-center justify-center text-center text-sm text-slate-500 dark:text-slate-400">
-          {t("reports.noData")}
+          No income or expense data available for the last six months.
         </div>
       ) : (
         <div className="h-72 w-full">
@@ -180,7 +183,7 @@ function IncomeExpenseChart() {
 
               <Bar
                 dataKey="income"
-                name={t("transactions.income")}
+                name="Income"
                 fill="#10b981"
                 radius={[5, 5, 0, 0]}
                 maxBarSize={32}
@@ -188,7 +191,7 @@ function IncomeExpenseChart() {
 
               <Bar
                 dataKey="expense"
-                name={t("transactions.expense")}
+                name="Expenses"
                 fill="#f43f5e"
                 radius={[5, 5, 0, 0]}
                 maxBarSize={32}

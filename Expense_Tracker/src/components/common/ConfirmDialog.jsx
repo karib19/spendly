@@ -1,8 +1,5 @@
-
 import { useEffect } from "react";
 import { AlertTriangle, X, LoaderCircle } from "lucide-react";
-
-import { useLanguage } from "../../context/LanguageContext";
 
 function ConfirmDialog({
   isOpen,
@@ -13,12 +10,8 @@ function ConfirmDialog({
   isLoading = false,
   error = "",
 }) {
-  const { t } = useLanguage();
-
   useEffect(() => {
-    if (!isOpen || isLoading) {
-      return;
-    }
+    if (!isOpen || isLoading) return;
 
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -33,29 +26,25 @@ function ConfirmDialog({
     };
   }, [isOpen, isLoading, onCancel]);
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   const handleCancel = () => {
-    if (isLoading) {
-      return;
-    }
-
+    if (isLoading) return;
     onCancel();
   };
 
   const handleConfirm = () => {
-    if (isLoading) {
-      return;
-    }
-
+    if (isLoading) return;
     onConfirm();
   };
 
   return (
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md animate-[fadeIn_160ms_ease-out]"
+      className="
+        fixed inset-0 z-60 flex items-center justify-center
+        bg-slate-950/60 p-4 backdrop-blur-md
+        animate-[fadeIn_160ms_ease-out]
+      "
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-dialog-title"
@@ -64,7 +53,7 @@ function ConfirmDialog({
       {/* Backdrop */}
       <button
         type="button"
-        aria-label={t("common.close")}
+        aria-label="Close confirmation dialog"
         onClick={handleCancel}
         disabled={isLoading}
         className="absolute inset-0 cursor-default disabled:cursor-not-allowed"
@@ -73,15 +62,11 @@ function ConfirmDialog({
       {/* Dialog */}
       <div
         className="
-          relative w-full max-w-md
-          overflow-hidden
-          rounded-3xl
-          border border-slate-200/80
-          bg-white
-          shadow-[0_25px_80px_rgba(15,23,42,0.25)]
+          relative w-full max-w-md overflow-hidden
+          rounded-3xl border border-slate-200/80
+          bg-white shadow-[0_25px_80px_rgba(15,23,42,0.25)]
           animate-[dialogIn_200ms_ease-out]
-          dark:border-slate-700/80
-          dark:bg-slate-900
+          dark:border-slate-700/80 dark:bg-slate-900
           dark:shadow-[0_25px_80px_rgba(0,0,0,0.5)]
         "
       >
@@ -93,21 +78,16 @@ function ConfirmDialog({
           className="
             absolute right-4 top-4
             flex h-9 w-9 items-center justify-center
-            rounded-xl
-            text-slate-400
-            transition-all duration-200
-            hover:rotate-90
-            hover:bg-slate-100
-            hover:text-slate-700
-            active:scale-90
-            disabled:cursor-not-allowed
-            disabled:opacity-50
-            disabled:hover:rotate-0
-            dark:text-slate-500
-            dark:hover:bg-slate-800
+            rounded-xl text-slate-400
+            transition-all duration-200 hover:rotate-90
+            hover:bg-slate-100 hover:text-slate-700
+            active:scale-90 disabled:cursor-not-allowed
+            disabled:opacity-50 disabled:hover:rotate-0
+            dark:text-slate-500 dark:hover:bg-slate-800
             dark:hover:text-white
           "
-          aria-label={t("common.close")}
+          aria-label="Close confirmation dialog"
+          title="Close"
         >
           <X size={18} />
         </button>
@@ -115,7 +95,15 @@ function ConfirmDialog({
         {/* Content */}
         <div className="p-6 sm:p-7">
           {/* Warning Icon */}
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-8 ring-rose-50/60 dark:bg-rose-950/50 dark:text-rose-400 dark:ring-rose-950/20">
+          <div
+            className="
+              flex h-12 w-12 items-center justify-center
+              rounded-2xl bg-rose-50 text-rose-600
+              ring-8 ring-rose-50/60
+              dark:bg-rose-950/50 dark:text-rose-400
+              dark:ring-rose-950/20
+            "
+          >
             <AlertTriangle size={22} strokeWidth={2.2} />
           </div>
 
@@ -138,7 +126,12 @@ function ConfirmDialog({
             {error && (
               <p
                 role="alert"
-                className="mt-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm leading-5 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/40 dark:text-rose-300"
+                className="
+                  mt-3 rounded-xl border border-rose-200
+                  bg-rose-50 px-3 py-2 text-sm leading-5
+                  text-rose-700 dark:border-rose-900/60
+                  dark:bg-rose-950/40 dark:text-rose-300
+                "
               >
                 {error}
               </p>
@@ -152,26 +145,17 @@ function ConfirmDialog({
               onClick={handleCancel}
               disabled={isLoading}
               className="
-                flex-1
-                rounded-xl
-                border border-slate-200
-                bg-white
-                px-4 py-3
-                text-sm font-semibold
-                text-slate-700
-                transition-all duration-200
-                hover:border-slate-300
-                hover:bg-slate-50
-                active:scale-[0.98]
-                disabled:cursor-not-allowed
-                disabled:opacity-50
-                dark:border-slate-700
-                dark:bg-slate-900
-                dark:text-slate-200
+                flex-1 rounded-xl border border-slate-200
+                bg-white px-4 py-3 text-sm font-semibold
+                text-slate-700 transition-all duration-200
+                hover:border-slate-300 hover:bg-slate-50
+                active:scale-[0.98] disabled:cursor-not-allowed
+                disabled:opacity-50 dark:border-slate-700
+                dark:bg-slate-900 dark:text-slate-200
                 dark:hover:bg-slate-800
               "
             >
-              {t("common.cancel")}
+              Cancel
             </button>
 
             <button
@@ -179,26 +163,14 @@ function ConfirmDialog({
               onClick={handleConfirm}
               disabled={isLoading}
               className="
-                flex-1
-                inline-flex
-                items-center
-                justify-center
-                gap-2
-                rounded-xl
-                bg-rose-600
-                px-4 py-3
-                text-sm font-semibold
-                text-white
-                shadow-sm
+                inline-flex flex-1 items-center justify-center
+                gap-2 rounded-xl bg-rose-600 px-4 py-3
+                text-sm font-semibold text-white shadow-sm
                 transition-all duration-200
-                hover:-translate-y-0.5
-                hover:bg-rose-700
-                hover:shadow-md
-                active:translate-y-0
-                active:scale-[0.98]
-                disabled:cursor-not-allowed
-                disabled:opacity-60
-                disabled:hover:translate-y-0
+                hover:-translate-y-0.5 hover:bg-rose-700
+                hover:shadow-md active:translate-y-0
+                active:scale-[0.98] disabled:cursor-not-allowed
+                disabled:opacity-60 disabled:hover:translate-y-0
                 disabled:hover:shadow-sm
               "
             >
@@ -206,9 +178,7 @@ function ConfirmDialog({
                 <LoaderCircle size={16} className="animate-spin" />
               )}
 
-              {isLoading
-                ? "Deleting..."
-                : t("common.delete")}
+              {isLoading ? "Deleting..." : "Delete"}
             </button>
           </div>
         </div>

@@ -7,13 +7,13 @@ import {
 
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
-import { getCategoryLabel } from "../../utils/translations";
 import { formatCurrency } from "../../utils/formatCurrency";
 
 function BudgetCard({ budget, onEdit, onDelete }) {
   const { transactions, settings } = useExpense();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
+  const currency = settings?.currency || "BDT";
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   const spent = transactions
@@ -24,7 +24,7 @@ function BudgetCard({ budget, onEdit, onDelete }) {
         transaction.date?.startsWith(currentMonth)
     )
     .reduce(
-      (total, transaction) => total + Number(transaction.amount),
+      (total, transaction) => total + Number(transaction.amount || 0),
       0
     );
 
@@ -35,7 +35,6 @@ function BudgetCard({ budget, onEdit, onDelete }) {
     budgetAmount > 0 ? (spent / budgetAmount) * 100 : 0;
 
   const progressWidth = Math.min(progress, 100);
-
   const isOverBudget = spent > budgetAmount;
   const isNearLimit = !isOverBudget && progress >= 80;
 
@@ -95,11 +94,11 @@ function BudgetCard({ budget, onEdit, onDelete }) {
 
           <div className="min-w-0">
             <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-              {getCategoryLabel(budget.category, t)}
+              {budget.category || "Uncategorized"}
             </h3>
 
             <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {t("budgets.monthlyBudget")}
+              Monthly Budget
             </p>
           </div>
         </div>
@@ -108,7 +107,7 @@ function BudgetCard({ budget, onEdit, onDelete }) {
         <div className="flex shrink-0 items-center gap-1">
           <button
             type="button"
-            onClick={() => onEdit(budget)}
+            onClick={() => onEdit?.(budget)}
             className="
               flex h-8 w-8 items-center justify-center rounded-lg
               text-slate-400
@@ -117,14 +116,15 @@ function BudgetCard({ budget, onEdit, onDelete }) {
               dark:text-slate-500
               dark:hover:bg-slate-800 dark:hover:text-white
             "
-            aria-label={`${t("budgets.edit")} ${budget.category}`}
+            aria-label={`Edit ${budget.category || "budget"}`}
+            title="Edit budget"
           >
             <Pencil size={15} />
           </button>
 
           <button
             type="button"
-            onClick={() => onDelete(budget)}
+            onClick={() => onDelete?.(budget)}
             className="
               flex h-8 w-8 items-center justify-center rounded-lg
               text-slate-400
@@ -133,7 +133,8 @@ function BudgetCard({ budget, onEdit, onDelete }) {
               dark:text-slate-500
               dark:hover:bg-rose-950/50 dark:hover:text-rose-400
             "
-            aria-label={`${t("budgets.delete")} ${budget.category}`}
+            aria-label={`Delete ${budget.category || "budget"}`}
+            title="Delete budget"
           >
             <Trash2 size={15} />
           </button>
@@ -144,7 +145,7 @@ function BudgetCard({ budget, onEdit, onDelete }) {
       <div className="mt-6 flex items-end justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {t("budgets.spent")}
+            Spent
           </p>
 
           <p
@@ -157,25 +158,17 @@ function BudgetCard({ budget, onEdit, onDelete }) {
               }
             `}
           >
-            {formatCurrency(
-              spent,
-              settings.currency,
-              language
-            )}
+            {formatCurrency(spent, currency, language)}
           </p>
         </div>
 
         <div className="text-right">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-            {t("budgets.budget")}
+            Budget
           </p>
 
           <p className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
-            {formatCurrency(
-              budgetAmount,
-              settings.currency,
-              language
-            )}
+            {formatCurrency(budgetAmount, currency, language)}
           </p>
         </div>
       </div>
@@ -184,6 +177,11 @@ function BudgetCard({ budget, onEdit, onDelete }) {
       <div className="mt-5">
         <div
           className={`h-2 overflow-hidden rounded-full ${progressTrackClass}`}
+          role="progressbar"
+          aria-label={`${budget.category || "Budget"} spending progress`}
+          aria-valuenow={Math.round(progress)}
+          aria-valuemin={0}
+          aria-valuemax={100}
         >
           <div
             className={`
@@ -191,9 +189,7 @@ function BudgetCard({ budget, onEdit, onDelete }) {
               transition-[width] duration-700 ease-out
               ${progressClass}
             `}
-            style={{
-              width: `${progressWidth}%`,
-            }}
+            style={{ width: `${progressWidth}%` }}
           />
         </div>
 
@@ -226,14 +222,14 @@ function BudgetCard({ budget, onEdit, onDelete }) {
             {isOverBudget
               ? `${formatCurrency(
                   Math.abs(remaining),
-                  settings.currency,
+                  currency,
                   language
-                )} ${t("budgets.overBudget")}`
+                )} Over Budget`
               : `${formatCurrency(
                   remaining,
-                  settings.currency,
+                  currency,
                   language
-                )} ${t("budgets.remaining")}`}
+                )} Remaining`}
           </span>
         </div>
       </div>
@@ -250,13 +246,11 @@ function BudgetCard({ budget, onEdit, onDelete }) {
             dark:bg-rose-950/30 dark:text-rose-400
           "
         >
-          <AlertTriangle
-            size={16}
-            className="mt-0.5 shrink-0"
-          />
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
 
           <p className="leading-5">
-            {t("budgets.overBudgetMessage")}
+            You have exceeded this budget. Consider reducing spending in
+            this category.
           </p>
         </div>
       )}
@@ -272,13 +266,11 @@ function BudgetCard({ budget, onEdit, onDelete }) {
             dark:bg-amber-950/30 dark:text-amber-400
           "
         >
-          <AlertTriangle
-            size={16}
-            className="mt-0.5 shrink-0"
-          />
+          <AlertTriangle size={16} className="mt-0.5 shrink-0" />
 
           <p className="leading-5">
-            {t("budgets.nearLimitMessage")}
+            You have used at least 80% of this budget. Keep an eye on your
+            spending.
           </p>
         </div>
       )}

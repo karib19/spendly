@@ -1,4 +1,3 @@
-
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -11,7 +10,7 @@ import { formatCurrency } from "../../utils/formatCurrency";
 
 function SummaryCard({ type, amount = 0 }) {
   const { settings } = useExpense();
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
   const safeAmount = Number.isFinite(Number(amount))
     ? Number(amount)
@@ -19,8 +18,8 @@ function SummaryCard({ type, amount = 0 }) {
 
   const cardConfig = {
     balance: {
-      label: t("dashboard.totalBalance"),
-      description: t("dashboard.incomeMinusExpenses"),
+      label: "Total Balance",
+      description: "Income minus expenses",
       icon: Wallet,
       iconClass:
         "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
@@ -31,8 +30,8 @@ function SummaryCard({ type, amount = 0 }) {
     },
 
     income: {
-      label: t("dashboard.totalIncome"),
-      description: t("dashboard.totalMoneyReceived"),
+      label: "Total Income",
+      description: "Total money received",
       icon: ArrowUpRight,
       iconClass:
         "bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400",
@@ -41,8 +40,8 @@ function SummaryCard({ type, amount = 0 }) {
     },
 
     expense: {
-      label: t("dashboard.totalExpenses"),
-      description: t("dashboard.totalMoneySpent"),
+      label: "Total Expenses",
+      description: "Total money spent",
       icon: ArrowDownLeft,
       iconClass:
         "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400",
@@ -57,17 +56,11 @@ function SummaryCard({ type, amount = 0 }) {
   return (
     <div
       className="
-        group
-        rounded-2xl
-        border border-slate-200
-        bg-white
-        p-5
-        shadow-sm
+        group min-w-0 rounded-2xl
+        border border-slate-200 bg-white p-5 shadow-sm
         transition-all duration-200
-        hover:-translate-y-0.5
-        hover:shadow-md
-        dark:border-slate-800
-        dark:bg-slate-900
+        hover:-translate-y-0.5 hover:shadow-md
+        dark:border-slate-800 dark:bg-slate-900
         dark:hover:shadow-black/20
         sm:p-6
       "
@@ -80,12 +73,8 @@ function SummaryCard({ type, amount = 0 }) {
 
           <h3
             className={`
-              mt-3
-              wrap-break-words
-              text-2xl
-              font-bold
-              tracking-tight
-              sm:text-[26px]
+              mt-3 wrap-break-words text-2xl font-bold
+              tracking-tight sm:text-[26px]
               ${config.amountClass}
             `}
           >
@@ -100,13 +89,12 @@ function SummaryCard({ type, amount = 0 }) {
         <div
           className={`
             flex h-10 w-10 shrink-0 items-center justify-center
-            rounded-xl
-            transition-transform duration-200
+            rounded-xl transition-transform duration-200
             group-hover:scale-105
             ${config.iconClass}
           `}
         >
-          <Icon size={20} strokeWidth={2} />
+          <Icon size={20} strokeWidth={2} aria-hidden="true" />
         </div>
       </div>
 

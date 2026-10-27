@@ -20,17 +20,16 @@ import Categories from "./pages/Categories";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 
 import TransactionForm from "./components/transactions/TransactionForm";
 import ConfirmDialog from "./components/common/ConfirmDialog";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 import { useExpense } from "./context/ExpenseContext";
-import { useLanguage } from "./context/LanguageContext";
 
 function App() {
   const { deleteTransaction, settings } = useExpense();
-  const { t } = useLanguage();
   const location = useLocation();
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -89,13 +88,10 @@ function App() {
   };
 
   const deleteTitle =
-    transactionToDelete?.title?.trim() || t("common.untitled");
+    transactionToDelete?.title?.trim() || "Untitled";
 
   const deleteMessage = transactionToDelete
-    ? t("confirm.deleteTransactionMessage").replace(
-        "{title}",
-        deleteTitle
-      )
+    ? `Are you sure you want to delete "${deleteTitle}"? This action cannot be undone.`
     : "";
 
   return (
@@ -156,12 +152,10 @@ function App() {
                 />
 
                 <Route path="/budgets" element={<Budgets />} />
-
                 <Route path="/reports" element={<Reports />} />
-
                 <Route path="/categories" element={<Categories />} />
-
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
               </Route>
 
               {/* Unknown paths return to the dashboard route. */}
@@ -182,7 +176,7 @@ function App() {
 
           <ConfirmDialog
             isOpen={Boolean(transactionToDelete)}
-            title={t("confirm.deleteTransaction")}
+            title="Delete transaction"
             message={deleteMessage}
             onCancel={closeDeleteConfirmation}
             onConfirm={confirmDeleteTransaction}

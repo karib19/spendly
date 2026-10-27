@@ -8,27 +8,16 @@ import {
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 
-import { getCategoryLabel } from "../../utils/translations";
 import { formatCurrency } from "../../utils/formatCurrency";
 
-function TransactionCard({
-  transaction,
-  onEdit,
-  onDelete,
-}) {
-  const { settings } = useExpense();
-  const { t, language } = useLanguage();
+function TransactionCard({ transaction, onEdit, onDelete }) {
+  const { settings = {} } = useExpense();
+  const { language } = useLanguage();
 
   const isIncome = transaction.type === "income";
 
-  const title =
-    transaction.title?.trim() ||
-    t("common.untitled");
-
-  const category =
-    transaction.category?.trim() ||
-    t("common.uncategorized");
-
+  const title = transaction.title?.trim() || "Untitled";
+  const category = transaction.category?.trim() || "Uncategorized";
   const date = transaction.date || "—";
 
   return (
@@ -67,15 +56,9 @@ function TransactionCard({
           `}
         >
           {isIncome ? (
-            <ArrowUpRight
-              size={20}
-              strokeWidth={2}
-            />
+            <ArrowUpRight size={20} strokeWidth={2} />
           ) : (
-            <ArrowDownLeft
-              size={20}
-              strokeWidth={2}
-            />
+            <ArrowDownLeft size={20} strokeWidth={2} />
           )}
         </div>
 
@@ -102,7 +85,7 @@ function TransactionCard({
               dark:text-slate-400
             "
           >
-            {getCategoryLabel(category, t)}
+            {category}
 
             <span className="mx-1.5 text-slate-300 dark:text-slate-600">
               •
@@ -127,7 +110,7 @@ function TransactionCard({
             {isIncome ? "+" : "-"}
             {formatCurrency(
               transaction.amount,
-              settings.currency,
+              settings.currency || "BDT",
               language
             )}
           </p>
@@ -149,7 +132,7 @@ function TransactionCard({
       >
         <button
           type="button"
-          onClick={() => onEdit(transaction)}
+          onClick={() => onEdit?.(transaction)}
           className="
             flex h-9 w-9
             items-center justify-center
@@ -163,15 +146,15 @@ function TransactionCard({
             dark:hover:bg-slate-700
             dark:hover:text-white
           "
-          aria-label={`${t("common.edit")} ${title}`}
-          title={t("common.edit")}
+          aria-label={`Edit ${title}`}
+          title="Edit"
         >
           <Pencil size={16} />
         </button>
 
         <button
           type="button"
-          onClick={() => onDelete(transaction)}
+          onClick={() => onDelete?.(transaction)}
           className="
             flex h-9 w-9
             items-center justify-center
@@ -185,8 +168,8 @@ function TransactionCard({
             dark:hover:bg-rose-950/50
             dark:hover:text-rose-400
           "
-          aria-label={`${t("common.delete")} ${title}`}
-          title={t("common.delete")}
+          aria-label={`Delete ${title}`}
+          title="Delete"
         >
           <Trash2 size={16} />
         </button>

@@ -2,18 +2,14 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import { useExpense } from "../../context/ExpenseContext";
-import { useLanguage } from "../../context/LanguageContext";
-import { getCategoryLabel } from "../../utils/translations";
 
 function BudgetForm({ isOpen, onClose, editingBudget }) {
   const {
-    categories,
-    budgets,
+    categories = {},
+    budgets = [],
     addBudget,
     updateBudget,
   } = useExpense();
-
-  const { t } = useLanguage();
 
   const [category, setCategory] = useState("");
   const [amount, setAmount] = useState("");
@@ -24,27 +20,26 @@ function BudgetForm({ isOpen, onClose, editingBudget }) {
   const isEditing = Boolean(editingBudget);
   const firstExpenseCategory = expenseCategories[0] || "";
 
-  // Current month in local time.
   const now = new Date();
 
   const currentMonth = `${now.getFullYear()}-${String(
     now.getMonth() + 1
   ).padStart(2, "0")}`;
 
-useEffect(() => {
-  if (!isOpen) return;
+  useEffect(() => {
+    if (!isOpen) return;
 
-  if (editingBudget) {
-    setCategory(editingBudget.category || "");
-    setAmount(String(editingBudget.amount ?? ""));
-  } else {
-    setCategory(firstExpenseCategory);
-    setAmount("");
-  }
+    if (editingBudget) {
+      setCategory(editingBudget.category || "");
+      setAmount(String(editingBudget.amount ?? ""));
+    } else {
+      setCategory(firstExpenseCategory);
+      setAmount("");
+    }
 
-  setError("");
-  setIsSubmitting(false);
-}, [isOpen, editingBudget, firstExpenseCategory]);
+    setError("");
+    setIsSubmitting(false);
+  }, [isOpen, editingBudget, firstExpenseCategory]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -62,8 +57,6 @@ useEffect(() => {
     };
   }, [isOpen, isSubmitting, onClose]);
 
-  if (!isOpen) return null;
-
   const getApiErrorMessage = (apiError) => {
     const data = apiError?.response?.data;
 
@@ -74,14 +67,19 @@ useEffect(() => {
     if (data && typeof data === "object") {
       const messages = Object.values(data)
         .flat(Infinity)
-        .filter((value) => typeof value === "string");
+        .filter(
+          (value) => typeof value === "string" && value.trim()
+        );
 
       if (messages.length > 0) {
         return messages.join(" ");
       }
     }
 
-    if (apiError?.response?.status === 401) {
+    if (
+      apiError?.response?.status === 401 ||
+      apiError?.response?.status === 403
+    ) {
       return "Your session may have expired. Please log in again.";
     }
 
@@ -99,7 +97,7 @@ useEffect(() => {
     setError("");
 
     if (!category) {
-      setError(t("budgetForm.selectCategory"));
+      setError("Please select a category.");
       return;
     }
 
@@ -110,11 +108,11 @@ useEffect(() => {
       !Number.isFinite(numericAmount) ||
       numericAmount <= 0
     ) {
-      setError(t("budgetForm.invalidAmount"));
+      setError("Please enter a valid amount greater than zero.");
       return;
     }
 
-    // Check duplicate category only for the current month.
+    // Prevent duplicate category budgets for the current month.
     const duplicateBudget = budgets.some((budget) => {
       const budgetMonth = budget.month
         ? budget.month.slice(0, 7)
@@ -128,7 +126,9 @@ useEffect(() => {
     });
 
     if (duplicateBudget) {
-      setError(t("budgetForm.alreadyExists"));
+      setError(
+        "A budget already exists for this category in the current month."
+      );
       return;
     }
 
@@ -169,6 +169,8 @@ useEffect(() => {
     onClose();
   };
 
+  if (!isOpen) return null;
+
   return (
     <div
       className="
@@ -183,14 +185,11 @@ useEffect(() => {
     >
       <div
         className="
-          w-full max-w-md overflow-hidden
-          rounded-3xl
-          border border-slate-200/80
-          bg-white
+          w-full max-w-md overflow-hidden rounded-3xl
+          border border-slate-200/80 bg-white
           shadow-[0_25px_80px_rgba(15,23,42,0.25)]
           animate-[modalIn_220ms_ease-out]
-          dark:border-slate-700/80
-          dark:bg-slate-900
+          dark:border-slate-700/80 dark:bg-slate-900
           dark:shadow-[0_25px_80px_rgba(0,0,0,0.45)]
         "
       >
@@ -201,20 +200,15 @@ useEffect(() => {
               <div className="min-w-0">
                 <h2
                   id="budget-form-title"
-                  className="
-                    text-lg font-bold tracking-tight
-                    text-slate-900 dark:text-white
-                  "
+                  className="text-lg font-bold tracking-tight text-slate-900 dark:text-white"
                 >
-                  {isEditing
-                    ? t("budgetForm.editTitle")
-                    : t("budgetForm.addTitle")}
+                  {isEditing ? "Edit Budget" : "Create Budget"}
                 </h2>
 
                 <p className="mt-1.5 text-sm leading-5 text-slate-500 dark:text-slate-400">
                   {isEditing
-                    ? t("budgetForm.editDescription")
-                    : t("budgetForm.addDescription")}
+                    ? "Update your monthly spending limit."
+                    : "Set a spending limit for an expense category."}
                 </p>
               </div>
 
@@ -226,13 +220,12 @@ useEffect(() => {
                   flex h-9 w-9 shrink-0 items-center justify-center
                   rounded-xl text-slate-400
                   transition-all duration-200
-                  hover:bg-slate-100 hover:text-slate-700
-                  hover:rotate-90 active:scale-90
-                  disabled:cursor-not-allowed disabled:opacity-50
+                  hover:rotate-90 hover:bg-slate-100 hover:text-slate-700
+                  active:scale-90 disabled:cursor-not-allowed disabled:opacity-50
                   dark:text-slate-500 dark:hover:bg-slate-800
                   dark:hover:text-white
                 "
-                aria-label={t("budgetForm.close")}
+                aria-label="Close budget form"
               >
                 <X size={19} />
               </button>
@@ -241,72 +234,67 @@ useEffect(() => {
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5 p-5 sm:p-6"
-        >
+        <form onSubmit={handleSubmit} className="space-y-5 p-5 sm:p-6">
           {/* Category */}
           <div>
             <label
               htmlFor="budget-category"
-              className="
-                mb-2 block text-sm font-semibold
-                text-slate-700 dark:text-slate-200
-              "
+              className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
             >
-              {t("budgetForm.category")}
+              Expense Category
             </label>
 
-            <select
-              id="budget-category"
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value);
-                setError("");
-              }}
-              disabled={isSubmitting}
-              required
-              className={`
-                w-full rounded-xl border
-                bg-slate-50 px-4 py-3
-                text-sm text-slate-900
-                outline-none transition-all duration-200
-                hover:border-slate-300 focus:bg-white focus:ring-4
-                disabled:cursor-not-allowed disabled:opacity-60
-                dark:bg-slate-800/80 dark:text-white
-                dark:hover:border-slate-600 dark:focus:bg-slate-800
-                ${
-                  error
-                    ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10"
-                    : "border-slate-200 focus:border-slate-400 focus:ring-slate-900/5 dark:border-slate-700 dark:focus:border-slate-500 dark:focus:ring-white/5"
-                }
-              `}
-            >
-              <option value="">
-                {t("budgetForm.selectCategory")}
-              </option>
+            {expenseCategories.length > 0 ? (
+              <select
+                id="budget-category"
+                value={category}
+                onChange={(event) => {
+                  setCategory(event.target.value);
+                  setError("");
+                }}
+                disabled={isSubmitting}
+                required
+                className={`
+                  w-full rounded-xl border bg-slate-50 px-4 py-3
+                  text-sm text-slate-900 outline-none
+                  transition-all duration-200
+                  hover:border-slate-300 focus:bg-white focus:ring-4
+                  disabled:cursor-not-allowed disabled:opacity-60
+                  dark:bg-slate-800/80 dark:text-white
+                  dark:hover:border-slate-600 dark:focus:bg-slate-800
+                  ${
+                    error
+                      ? "border-rose-400 focus:border-rose-500 focus:ring-rose-500/10"
+                      : "border-slate-200 focus:border-slate-400 focus:ring-slate-900/5 dark:border-slate-700 dark:focus:border-slate-500 dark:focus:ring-white/5"
+                  }
+                `}
+              >
+                <option value="">Select a category</option>
 
-              {expenseCategories.map((expenseCategory) => (
-                <option
-                  key={expenseCategory}
-                  value={expenseCategory}
-                >
-                  {getCategoryLabel(expenseCategory, t)}
-                </option>
-              ))}
-            </select>
+                {expenseCategories.map((expenseCategory) => (
+                  <option
+                    key={expenseCategory}
+                    value={expenseCategory}
+                  >
+                    {expenseCategory}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-5 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400">
+                No expense categories are available. Add an expense
+                category before creating a budget.
+              </p>
+            )}
           </div>
 
           {/* Amount */}
           <div>
             <label
               htmlFor="budget-amount"
-              className="
-                mb-2 block text-sm font-semibold
-                text-slate-700 dark:text-slate-200
-              "
+              className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-200"
             >
-              {t("budgetForm.amount")}
+              Monthly Budget Amount
             </label>
 
             <input
@@ -319,15 +307,13 @@ useEffect(() => {
                 setAmount(event.target.value);
                 setError("");
               }}
-              placeholder={t("budgetForm.amountPlaceholder")}
+              placeholder="e.g. 5000"
               disabled={isSubmitting}
               required
               className={`
-                w-full rounded-xl border
-                bg-slate-50 px-4 py-3
-                text-sm text-slate-900
-                outline-none transition-all duration-200
-                placeholder:text-slate-400
+                w-full rounded-xl border bg-slate-50 px-4 py-3
+                text-sm text-slate-900 outline-none
+                transition-all duration-200 placeholder:text-slate-400
                 hover:border-slate-300 focus:bg-white focus:ring-4
                 disabled:cursor-not-allowed disabled:opacity-60
                 dark:bg-slate-800/80 dark:text-white
@@ -341,7 +327,8 @@ useEffect(() => {
             />
 
             <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
-              {t("budgetForm.amountDescription")}
+              Set the maximum amount you plan to spend in this category
+              during the current month.
             </p>
           </div>
 
@@ -350,12 +337,11 @@ useEffect(() => {
             <div
               role="alert"
               className="
-                rounded-xl border border-rose-200
-                bg-rose-50 px-4 py-3
-                text-xs font-medium text-rose-700
+                rounded-xl border border-rose-200 bg-rose-50
+                px-4 py-3 text-xs font-medium text-rose-700
                 animate-[fadeIn_160ms_ease-out]
-                dark:border-rose-900/50
-                dark:bg-rose-950/30 dark:text-rose-400
+                dark:border-rose-900/50 dark:bg-rose-950/30
+                dark:text-rose-400
               "
             >
               {error}
@@ -369,9 +355,9 @@ useEffect(() => {
               onClick={handleClose}
               disabled={isSubmitting}
               className="
-                rounded-xl border border-slate-200
-                px-4 py-3 text-sm font-semibold
-                text-slate-700 transition-all duration-200
+                rounded-xl border border-slate-200 px-4 py-3
+                text-sm font-semibold text-slate-700
+                transition-all duration-200
                 hover:border-slate-300 hover:bg-slate-50
                 active:scale-[0.98]
                 disabled:cursor-not-allowed disabled:opacity-50
@@ -379,29 +365,28 @@ useEffect(() => {
                 dark:hover:bg-slate-800
               "
             >
-              {t("budgetForm.cancel")}
+              Cancel
             </button>
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || expenseCategories.length === 0}
               className="
-                rounded-xl bg-slate-900
-                px-4 py-3 text-sm font-semibold text-white
-                shadow-sm transition-all duration-200
+                rounded-xl bg-slate-900 px-4 py-3
+                text-sm font-semibold text-white shadow-sm
+                transition-all duration-200
                 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md
                 active:translate-y-0 active:scale-[0.98]
                 disabled:cursor-not-allowed disabled:opacity-60
                 disabled:hover:translate-y-0 disabled:hover:shadow-sm
-                dark:bg-slate-100 dark:text-slate-900
-                dark:hover:bg-white
+                dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white
               "
             >
               {isSubmitting
                 ? "Saving..."
                 : isEditing
-                  ? t("budgetForm.saveChanges")
-                  : t("budgetForm.addBudget")}
+                  ? "Save Changes"
+                  : "Create Budget"}
             </button>
           </div>
         </form>
@@ -409,12 +394,8 @@ useEffect(() => {
 
       <style>{`
         @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
 
         @keyframes modalIn {

@@ -3,20 +3,13 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 
 import { useExpense } from "../../context/ExpenseContext";
-import { useLanguage } from "../../context/LanguageContext";
-
-import { getCategoryLabel } from "../../utils/translations";
 import { getCurrencySymbol } from "../../utils/formatCurrency";
 
-const paymentMethods = [
-  "Cash",
-  "Card",
-  "Bank",
-  "Mobile Banking",
-];
+const paymentMethods = ["Cash", "Card", "Bank", "Mobile Banking"];
 
 function getTodayDate() {
   const today = new Date();
+
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
@@ -43,8 +36,11 @@ function getInitialFormData(editingTransaction, categories) {
       amount: editingTransaction.amount ?? "",
       category: editingTransaction.category || "",
       date: editingTransaction.date || getTodayDate(),
-      paymentMethod: editingTransaction.paymentMethod || "Cash",
-      note: editingTransaction.note || "",
+      paymentMethod:
+        editingTransaction.paymentMethod ||
+        editingTransaction.payment_method ||
+        "Cash",
+      note: editingTransaction.note || editingTransaction.description || "",
     };
   }
 
@@ -57,13 +53,11 @@ function TransactionForm({
   editingTransaction = null,
 }) {
   const {
-    categories,
-    settings,
+    categories = {},
+    settings = {},
     addTransaction,
     updateTransaction,
   } = useExpense();
-
-  const { t } = useLanguage();
 
   const [type, setType] = useState(
     editingTransaction?.type === "income" ? "income" : "expense"
@@ -91,9 +85,8 @@ function TransactionForm({
     ...availableCategories,
   ];
 
-  const currencySymbol = getCurrencySymbol(settings.currency);
+  const currencySymbol = getCurrencySymbol(settings?.currency || "BDT");
 
-  // Refresh the form whenever a new transaction is opened for editing.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -106,7 +99,6 @@ function TransactionForm({
     setIsSubmitting(false);
   }, [isOpen, editingTransaction, categories]);
 
-  // Close the drawer with Escape.
   useEffect(() => {
     if (!isOpen) return;
 
@@ -156,20 +148,12 @@ function TransactionForm({
 
     if (isSubmitting) return;
 
-    const title = formData.title.trim();
+    const enteredTitle = formData.title.trim();
     const amount = Number(formData.amount);
     const category = formData.category.trim();
     const note = formData.note.trim();
 
-    if (!title) {
-      setErrorMessage("Please enter a transaction description.");
-      return;
-    }
-
-    if (
-      !Number.isFinite(amount) ||
-      amount <= 0
-    ) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       setErrorMessage("Please enter a valid amount greater than zero.");
       return;
     }
@@ -183,6 +167,10 @@ function TransactionForm({
       setErrorMessage("Please select a date.");
       return;
     }
+
+    // Keep title populated for APIs that require a transaction title.
+    // If Description is empty, use the selected category as the title.
+    const title = enteredTitle || category;
 
     const transactionData = {
       title,
@@ -199,10 +187,7 @@ function TransactionForm({
 
     try {
       if (isEditing) {
-        await updateTransaction(
-          editingTransaction.id,
-          transactionData
-        );
+        await updateTransaction(editingTransaction.id, transactionData);
       } else {
         await addTransaction(transactionData);
       }
@@ -237,18 +222,16 @@ function TransactionForm({
 
   const getPaymentMethodLabel = (method) => {
     const labels = {
-      Cash: t("transactionForm.cash"),
-      Card: t("transactionForm.card"),
-      Bank: t("transactionForm.bank"),
-      "Mobile Banking": t("transactionForm.mobileBanking"),
+      Cash: "Cash",
+      Card: "Card",
+      Bank: "Bank",
+      "Mobile Banking": "Mobile Banking",
     };
 
     return labels[method] || method;
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div
@@ -257,10 +240,9 @@ function TransactionForm({
       aria-modal="true"
       aria-labelledby="transaction-form-title"
     >
-      {/* Backdrop */}
       <button
         type="button"
-        aria-label={t("transactionForm.close")}
+        aria-label="Close transaction form"
         onClick={() => {
           if (!isSubmitting) onClose();
         }}
@@ -272,7 +254,6 @@ function TransactionForm({
         "
       />
 
-      {/* Drawer */}
       <div
         className="
           absolute right-0 top-0 flex h-full w-full max-w-md
@@ -292,25 +273,15 @@ function TransactionForm({
           <div className="min-w-0 pr-4">
             <h2
               id="transaction-form-title"
-              className="
-                text-lg font-bold tracking-tight
-                text-slate-900 dark:text-white
-              "
+              className="text-lg font-bold tracking-tight text-slate-900 dark:text-white"
             >
-              {isEditing
-                ? t("transactionForm.editTitle")
-                : t("transactionForm.addTitle")}
+              {isEditing ? "Edit Transaction" : "Add Transaction"}
             </h2>
 
-            <p
-              className="
-                mt-1 text-xs leading-5
-                text-slate-500 dark:text-slate-400
-              "
-            >
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
               {isEditing
-                ? t("transactionForm.editDescription")
-                : t("transactionForm.addDescription")}
+                ? "Update your transaction details."
+                : "Enter the details of your transaction."}
             </p>
           </div>
 
@@ -318,6 +289,7 @@ function TransactionForm({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
+            aria-label="Close transaction form"
             className="
               flex h-9 w-9 shrink-0 items-center justify-center
               rounded-xl text-slate-500 transition-all duration-200
@@ -326,7 +298,6 @@ function TransactionForm({
               dark:text-slate-400 dark:hover:bg-slate-800
               dark:hover:text-white
             "
-            aria-label={t("transactionForm.close")}
           >
             <X size={19} />
           </button>
@@ -337,74 +308,47 @@ function TransactionForm({
           onSubmit={handleSubmit}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <div
-            className="
-              min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6
-            "
-          >
+          <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
             {/* Transaction Type */}
             <div>
-              <label
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
-              >
-                {t("transactionForm.transactionType")}
+              <label className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                Transaction Type
               </label>
 
-              <div
-                className="
-                  grid grid-cols-2 gap-1 rounded-xl
-                  bg-slate-100 p-1 dark:bg-slate-800
-                "
-              >
-                <button
-                  type="button"
-                  onClick={() => handleTypeChange("expense")}
-                  disabled={isSubmitting}
-                  className={`
-                    rounded-lg py-2.5 text-sm font-semibold
-                    transition-all duration-200
-                    ${
-                      type === "expense"
-                        ? "bg-white text-rose-600 shadow-sm dark:bg-slate-700 dark:text-rose-400"
-                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                    }
-                  `}
-                >
-                  {t("transactionForm.expense")}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleTypeChange("income")}
-                  disabled={isSubmitting}
-                  className={`
-                    rounded-lg py-2.5 text-sm font-semibold
-                    transition-all duration-200
-                    ${
-                      type === "income"
-                        ? "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
-                        : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
-                    }
-                  `}
-                >
-                  {t("transactionForm.income")}
-                </button>
+              <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+                {["expense", "income"].map((transactionType) => (
+                  <button
+                    key={transactionType}
+                    type="button"
+                    onClick={() => handleTypeChange(transactionType)}
+                    disabled={isSubmitting}
+                    className={`
+                      rounded-lg py-2.5 text-sm font-semibold transition-all duration-200
+                      ${
+                        type === transactionType
+                          ? transactionType === "expense"
+                            ? "bg-white text-rose-600 shadow-sm dark:bg-slate-700 dark:text-rose-400"
+                            : "bg-white text-emerald-600 shadow-sm dark:bg-slate-700 dark:text-emerald-400"
+                          : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                      }
+                    `}
+                  >
+                    {transactionType === "expense" ? "Expense" : "Income"}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Description */}
+            {/* Optional Description */}
             <div>
               <label
                 htmlFor="title"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.description")}
+                Description
+                <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">
+                  (Optional)
+                </span>
               </label>
 
               <input
@@ -413,20 +357,20 @@ function TransactionForm({
                 type="text"
                 value={formData.title}
                 onChange={handleChange}
-                required
                 maxLength={150}
                 autoComplete="off"
                 disabled={isSubmitting}
-                placeholder={t(
-                  "transactionForm.descriptionPlaceholder"
-                )}
+                placeholder={
+                  type === "income"
+                    ? "e.g. October salary (optional)"
+                    : "e.g. Grocery shopping (optional)"
+                }
                 className="
                   w-full rounded-xl border border-slate-200 bg-white
                   px-4 py-3 text-sm text-slate-900 outline-none
                   transition-all duration-200 placeholder:text-slate-400
                   hover:border-slate-300 focus:border-slate-400
-                  focus:ring-4 focus:ring-slate-900/5
-                  disabled:opacity-60
+                  focus:ring-4 focus:ring-slate-900/5 disabled:opacity-60
                   dark:border-slate-700 dark:bg-slate-800
                   dark:text-white dark:placeholder:text-slate-500
                   dark:hover:border-slate-600 dark:focus:border-slate-500
@@ -439,22 +383,13 @@ function TransactionForm({
             <div>
               <label
                 htmlFor="amount"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.amount")}
+                Amount
               </label>
 
               <div className="relative">
-                <span
-                  className="
-                    pointer-events-none absolute left-4 top-1/2
-                    -translate-y-1/2 text-sm font-semibold
-                    text-slate-500 dark:text-slate-400
-                  "
-                >
+                <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-500 dark:text-slate-400">
                   {currencySymbol}
                 </span>
 
@@ -475,9 +410,8 @@ function TransactionForm({
                     py-3 pl-9 pr-4 text-sm font-medium text-slate-900
                     outline-none transition-all duration-200
                     placeholder:text-slate-400 hover:border-slate-300
-                    focus:border-slate-400 focus:ring-4
-                    focus:ring-slate-900/5 disabled:opacity-60
-                    dark:border-slate-700 dark:bg-slate-800
+                    focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5
+                    disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800
                     dark:text-white dark:placeholder:text-slate-500
                     dark:hover:border-slate-600 dark:focus:border-slate-500
                     dark:focus:ring-white/5
@@ -490,12 +424,9 @@ function TransactionForm({
             <div>
               <label
                 htmlFor="category"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.category")}
+                Category
               </label>
 
               {categoryOptions.length > 0 ? (
@@ -510,16 +441,15 @@ function TransactionForm({
                     w-full rounded-xl border border-slate-200 bg-white
                     px-4 py-3 text-sm text-slate-900 outline-none
                     transition-all duration-200 hover:border-slate-300
-                    focus:border-slate-400 focus:ring-4
-                    focus:ring-slate-900/5 disabled:opacity-60
-                    dark:border-slate-700 dark:bg-slate-800
+                    focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5
+                    disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800
                     dark:text-white dark:hover:border-slate-600
                     dark:focus:border-slate-500 dark:focus:ring-white/5
                   "
                 >
                   {categoryOptions.map((category) => (
                     <option key={category} value={category}>
-                      {getCategoryLabel(category, t)}
+                      {category}
                     </option>
                   ))}
                 </select>
@@ -528,15 +458,12 @@ function TransactionForm({
                   className="
                     rounded-xl border border-amber-200 bg-amber-50
                     px-4 py-3 text-sm leading-5 text-amber-700
-                    dark:border-amber-900 dark:bg-amber-950/40
-                    dark:text-amber-400
+                    dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400
                   "
                 >
-                  {t("transactionForm.noCategories")}{" "}
-                  {type === "expense"
-                    ? t("transactionForm.expense").toLowerCase()
-                    : t("transactionForm.income").toLowerCase()}{" "}
-                  {t("transactionForm.categoriesAvailable")}
+                  No categories available for{" "}
+                  {type === "expense" ? "expense" : "income"}. Add a category
+                  before creating this transaction.
                 </div>
               )}
             </div>
@@ -545,12 +472,9 @@ function TransactionForm({
             <div>
               <label
                 htmlFor="date"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.date")}
+                Date
               </label>
 
               <input
@@ -565,9 +489,8 @@ function TransactionForm({
                   w-full rounded-xl border border-slate-200 bg-white
                   px-4 py-3 text-sm text-slate-900 outline-none
                   transition-all duration-200 hover:border-slate-300
-                  focus:border-slate-400 focus:ring-4
-                  focus:ring-slate-900/5 disabled:opacity-60
-                  dark:border-slate-700 dark:bg-slate-800
+                  focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5
+                  disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800
                   dark:text-white dark:hover:border-slate-600
                   dark:focus:border-slate-500 dark:focus:ring-white/5
                 "
@@ -578,12 +501,9 @@ function TransactionForm({
             <div>
               <label
                 htmlFor="paymentMethod"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.paymentMethod")}
+                Payment Method
               </label>
 
               <select
@@ -596,9 +516,8 @@ function TransactionForm({
                   w-full rounded-xl border border-slate-200 bg-white
                   px-4 py-3 text-sm text-slate-900 outline-none
                   transition-all duration-200 hover:border-slate-300
-                  focus:border-slate-400 focus:ring-4
-                  focus:ring-slate-900/5 disabled:opacity-60
-                  dark:border-slate-700 dark:bg-slate-800
+                  focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5
+                  disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800
                   dark:text-white dark:hover:border-slate-600
                   dark:focus:border-slate-500 dark:focus:ring-white/5
                 "
@@ -611,23 +530,15 @@ function TransactionForm({
               </select>
             </div>
 
-            {/* Note */}
+            {/* Optional Note */}
             <div>
               <label
                 htmlFor="note"
-                className="
-                  mb-2 block text-sm font-semibold
-                  text-slate-700 dark:text-slate-300
-                "
+                className="mb-2 block text-sm font-semibold text-slate-700 dark:text-slate-300"
               >
-                {t("transactionForm.note")}
-                <span
-                  className="
-                    ml-1 font-normal text-slate-400
-                    dark:text-slate-500
-                  "
-                >
-                  {t("transactionForm.optional")}
+                Note
+                <span className="ml-1 font-normal text-slate-400 dark:text-slate-500">
+                  (Optional)
                 </span>
               </label>
 
@@ -639,18 +550,14 @@ function TransactionForm({
                 onChange={handleChange}
                 maxLength={500}
                 disabled={isSubmitting}
-                placeholder={t(
-                  "transactionForm.notePlaceholder"
-                )}
+                placeholder="Add any extra details..."
                 className="
-                  w-full resize-none rounded-xl border
-                  border-slate-200 bg-white px-4 py-3
-                  text-sm leading-5 text-slate-900 outline-none
-                  transition-all duration-200 placeholder:text-slate-400
-                  hover:border-slate-300 focus:border-slate-400
-                  focus:ring-4 focus:ring-slate-900/5
-                  disabled:opacity-60
-                  dark:border-slate-700 dark:bg-slate-800
+                  w-full resize-none rounded-xl border border-slate-200
+                  bg-white px-4 py-3 text-sm leading-5 text-slate-900
+                  outline-none transition-all duration-200
+                  placeholder:text-slate-400 hover:border-slate-300
+                  focus:border-slate-400 focus:ring-4 focus:ring-slate-900/5
+                  disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800
                   dark:text-white dark:placeholder:text-slate-500
                   dark:hover:border-slate-600 dark:focus:border-slate-500
                   dark:focus:ring-white/5
@@ -658,15 +565,14 @@ function TransactionForm({
               />
             </div>
 
-            {/* API and validation errors */}
+            {/* Errors */}
             {errorMessage && (
               <div
                 role="alert"
                 className="
                   rounded-xl border border-rose-200 bg-rose-50
                   px-4 py-3 text-sm leading-5 text-rose-700
-                  dark:border-rose-900 dark:bg-rose-950/40
-                  dark:text-rose-300
+                  dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300
                 "
               >
                 {errorMessage}
@@ -675,29 +581,22 @@ function TransactionForm({
           </div>
 
           {/* Footer */}
-          <div
-            className="
-              shrink-0 border-t border-slate-200 bg-white
-              p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6
-            "
-          >
+          <div className="shrink-0 border-t border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-950 sm:p-6">
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={isSubmitting}
                 className="
-                  flex-1 rounded-xl border border-slate-200
-                  bg-white px-4 py-3 text-sm font-semibold
-                  text-slate-700 transition-all duration-200
-                  hover:border-slate-300 hover:bg-slate-50
-                  active:scale-[0.98] disabled:opacity-50
-                  dark:border-slate-700 dark:bg-slate-900
-                  dark:text-slate-200 dark:hover:border-slate-600
-                  dark:hover:bg-slate-800
+                  flex-1 rounded-xl border border-slate-200 bg-white
+                  px-4 py-3 text-sm font-semibold text-slate-700
+                  transition-all duration-200 hover:border-slate-300
+                  hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50
+                  dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200
+                  dark:hover:border-slate-600 dark:hover:bg-slate-800
                 "
               >
-                {t("common.cancel")}
+                Cancel
               </button>
 
               <button
@@ -720,10 +619,10 @@ function TransactionForm({
                 {isSubmitting
                   ? "Saving..."
                   : isEditing
-                    ? t("transactionForm.saveChanges")
+                    ? "Save Changes"
                     : type === "expense"
-                      ? t("transactionForm.addExpense")
-                      : t("transactionForm.addIncome")}
+                      ? "Add Expense"
+                      : "Add Income"}
               </button>
             </div>
           </div>

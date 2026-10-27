@@ -1,10 +1,5 @@
 import { useMemo, useState } from "react";
-
-import {
-  AlertTriangle,
-  Plus,
-  WalletCards,
-} from "lucide-react";
+import { AlertTriangle, Plus, WalletCards } from "lucide-react";
 
 import { useExpense } from "../context/ExpenseContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -15,19 +10,18 @@ import ConfirmDialog from "../components/common/ConfirmDialog";
 
 import { formatCurrency } from "../utils/formatCurrency";
 import { formatNumber } from "../utils/formatNumber";
-import { getCategoryLabel } from "../utils/translations";
 
 function Budgets() {
   const {
-    budgets,
+    budgets = [],
     budgetsLoading,
     budgetsError,
-    transactions,
-    settings,
+    transactions = [],
+    settings = {},
     deleteBudget,
   } = useExpense();
 
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
@@ -35,7 +29,6 @@ function Budgets() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
 
-  // Use local date to avoid timezone-related month mismatches.
   const now = new Date();
 
   const currentMonth = `${now.getFullYear()}-${String(
@@ -44,10 +37,7 @@ function Budgets() {
 
   const currentMonthBudgets = useMemo(() => {
     return budgets.filter((budget) => {
-      if (!budget.month) {
-        // Support older budget objects without a month field.
-        return true;
-      }
+      if (!budget.month) return true;
 
       return budget.month.startsWith(currentMonth);
     });
@@ -61,18 +51,13 @@ function Budgets() {
 
     const totalSpent = transactions
       .filter((transaction) => {
-        if (
-          transaction.type !== "expense" ||
-          !transaction.date
-        ) {
-          return false;
-        }
-
-        return transaction.date.startsWith(currentMonth);
+        return (
+          transaction.type === "expense" &&
+          transaction.date?.startsWith(currentMonth)
+        );
       })
       .reduce(
-        (total, transaction) =>
-          total + Number(transaction.amount || 0),
+        (total, transaction) => total + Number(transaction.amount || 0),
         0
       );
 
@@ -109,6 +94,8 @@ function Budgets() {
       ? "text-amber-600 dark:text-amber-400"
       : "text-slate-600 dark:text-slate-400";
 
+  const currency = settings?.currency || "BDT";
+
   const openAddBudget = () => {
     setEditingBudget(null);
     setIsFormOpen(true);
@@ -124,70 +111,63 @@ function Budgets() {
     setEditingBudget(null);
   };
 
+  const handleDeleteRequest = (budget) => {
+    if (isDeleting) return;
 
-const handleDeleteRequest = (budget) => {
-  if (isDeleting) return;
+    setDeleteError("");
+    setBudgetToDelete(budget);
+  };
 
-  setDeleteError("");
-  setBudgetToDelete(budget);
-};
-
-const handleCancelDelete = () => {
-  if (isDeleting) return;
-
-  setBudgetToDelete(null);
-  setDeleteError("");
-};
-
-const handleConfirmDelete = async () => {
-  if (!budgetToDelete || isDeleting) return;
-
-  setIsDeleting(true);
-  setDeleteError("");
-
-  try {
-    await deleteBudget(budgetToDelete.id);
+  const handleCancelDelete = () => {
+    if (isDeleting) return;
 
     setBudgetToDelete(null);
     setDeleteError("");
-  } catch (error) {
-    console.error("Failed to delete budget:", error);
+  };
 
-    const responseData = error?.response?.data;
-    let apiMessage = "";
+  const handleConfirmDelete = async () => {
+    if (!budgetToDelete || isDeleting) return;
 
-    if (typeof responseData === "string") {
-      apiMessage = responseData;
-    } else if (responseData && typeof responseData === "object") {
-      const firstError = Object.values(responseData)
-        .flat(Infinity)
-        .find((value) => typeof value === "string" && value.trim());
+    setIsDeleting(true);
+    setDeleteError("");
 
-      if (firstError) {
-        apiMessage = firstError;
+    try {
+      await deleteBudget(budgetToDelete.id);
+      setBudgetToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete budget:", error);
+
+      const responseData = error?.response?.data;
+      let apiMessage = "";
+
+      if (typeof responseData === "string") {
+        apiMessage = responseData;
+      } else if (responseData && typeof responseData === "object") {
+        const firstError = Object.values(responseData)
+          .flat(Infinity)
+          .find(
+            (value) => typeof value === "string" && value.trim()
+          );
+
+        if (firstError) {
+          apiMessage = firstError;
+        }
       }
+
+      setDeleteError(
+        apiMessage ||
+          error?.message ||
+          "Could not delete this budget. Please try again."
+      );
+    } finally {
+      setIsDeleting(false);
     }
+  };
 
-    setDeleteError(
-      apiMessage ||
-        error?.message ||
-        "Could not delete this budget. Please try again."
-    );
-  } finally {
-    setIsDeleting(false);
-  }
-};
-
-
-  const deleteCategory = budgetToDelete
-    ? getCategoryLabel(budgetToDelete.category, t)
-    : "";
+  const deleteCategory = budgetToDelete?.category || "this category";
 
   const deleteMessage = budgetToDelete
-    ? t("budgets.deleteMessage").replace(
-        "{category}",
-        deleteCategory
-      )
+    ? `Are you sure you want to delete the budget for ${deleteCategory}? This action cannot be undone.`
     : "";
 
   return (
@@ -195,71 +175,34 @@ const handleConfirmDelete = async () => {
       {/* Header */}
       <div
         className="
-          mb-8
-          flex flex-col gap-4
-          sm:flex-row
-          sm:items-end
-          sm:justify-between
+          mb-8 flex flex-col gap-4
+          sm:flex-row sm:items-end sm:justify-between
         "
       >
-        <div>
-          <div className="flex items-start gap-3">
-            <div
-              className="
-                flex h-11 w-11
-                shrink-0
-                items-center justify-center
-                rounded-xl
-                bg-slate-100
-                text-slate-700
-                transition-transform duration-200
-                hover:scale-105
-                dark:bg-slate-800
-                dark:text-slate-300
-              "
-            >
-              <WalletCards size={21} strokeWidth={2} />
-            </div>
+        <div className="flex items-start gap-3">
+          <div
+            className="
+              flex h-11 w-11 shrink-0 items-center justify-center
+              rounded-xl bg-slate-100 text-slate-700
+              transition-transform duration-200 hover:scale-105
+              dark:bg-slate-800 dark:text-slate-300
+            "
+          >
+            <WalletCards size={21} strokeWidth={2} />
+          </div>
 
-            <div>
-              <p
-                className="
-                  mb-1
-                  text-sm
-                  font-medium
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("budgets.subtitle")}
-              </p>
+          <div>
+            <p className="mb-1 text-sm font-medium text-slate-500 dark:text-slate-400">
+              Manage your spending
+            </p>
 
-              <h1
-                className="
-                  text-2xl
-                  font-bold
-                  tracking-tight
-                  text-slate-900
-                  dark:text-white
-                  sm:text-3xl
-                "
-              >
-                {t("budgets.title")}
-              </h1>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+              Budgets
+            </h1>
 
-              <p
-                className="
-                  mt-2
-                  max-w-2xl
-                  text-sm
-                  leading-6
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("budgets.description")}
-              </p>
-            </div>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Set spending limits and keep track of your monthly expenses.
+            </p>
           </div>
         </div>
 
@@ -267,45 +210,31 @@ const handleConfirmDelete = async () => {
           type="button"
           onClick={openAddBudget}
           className="
-            inline-flex
-            items-center
-            justify-center
-            gap-2
-            rounded-xl
-            bg-slate-900
-            px-4 py-3
-            text-sm
-            font-semibold
-            text-white
-            shadow-sm
-            transition-all duration-200
-            hover:-translate-y-0.5
-            hover:bg-slate-800
-            hover:shadow-md
-            active:translate-y-0
-            active:scale-[0.98]
-            dark:bg-slate-100
-            dark:text-slate-900
-            dark:hover:bg-white
+            inline-flex items-center justify-center gap-2
+            rounded-xl bg-slate-900 px-4 py-3 text-sm
+            font-semibold text-white shadow-sm
+            transition-all duration-200 hover:-translate-y-0.5
+            hover:bg-slate-800 hover:shadow-md
+            active:translate-y-0 active:scale-[0.98]
+            dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white
           "
         >
           <Plus size={18} strokeWidth={2.1} />
-          {t("budgets.addBudget")}
+          Add Budget
         </button>
       </div>
 
-      {/* Backend loading/error status */}
+      {/* Loading and API errors */}
       {budgetsLoading && (
         <div
           role="status"
           className="
-            mb-5 rounded-xl border border-slate-200
-            bg-white px-4 py-3 text-sm text-slate-600
-            dark:border-slate-800 dark:bg-slate-900
-            dark:text-slate-300
+            mb-5 rounded-xl border border-slate-200 bg-white
+            px-4 py-3 text-sm text-slate-600
+            dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300
           "
         >
-          {t("common.loading") || "Loading budgets..."}
+          Loading budgets...
         </div>
       )}
 
@@ -313,10 +242,9 @@ const handleConfirmDelete = async () => {
         <div
           role="alert"
           className="
-            mb-5 rounded-xl border border-rose-200
-            bg-rose-50 px-4 py-3 text-sm text-rose-700
-            dark:border-rose-900/50 dark:bg-rose-950/30
-            dark:text-rose-400
+            mb-5 rounded-xl border border-rose-200 bg-rose-50
+            px-4 py-3 text-sm text-rose-700
+            dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-400
           "
         >
           {budgetsError}
@@ -326,78 +254,42 @@ const handleConfirmDelete = async () => {
       {/* Monthly Summary */}
       <section
         className="
-          mb-7
-          rounded-2xl
-          border border-slate-200
-          bg-white
-          p-5
-          shadow-sm
-          transition-all duration-200
-          hover:shadow-md
-          dark:border-slate-800
-          dark:bg-slate-900
-          dark:hover:shadow-black/20
+          mb-7 rounded-2xl border border-slate-200 bg-white
+          p-5 shadow-sm transition-all duration-200 hover:shadow-md
+          dark:border-slate-800 dark:bg-slate-900 dark:hover:shadow-black/20
           sm:p-6
         "
       >
         <div
           className="
             flex flex-col gap-6
-            lg:flex-row
-            lg:items-center
-            lg:justify-between
+            lg:flex-row lg:items-center lg:justify-between
           "
         >
           <div>
-            <h2
-              className="
-                font-semibold
-                tracking-tight
-                text-slate-900
-                dark:text-white
-              "
-            >
-              {t("budgets.monthlyProgress")}
+            <h2 className="font-semibold tracking-tight text-slate-900 dark:text-white">
+              Monthly Progress
             </h2>
 
-            <p
-              className="
-                mt-1
-                text-xs
-                leading-5
-                text-slate-500
-                dark:text-slate-400
-              "
-            >
-              {t("budgets.progressDescription")}
+            <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+              Track your spending against your total monthly budget.
             </p>
           </div>
 
           <div className="grid grid-cols-3 gap-4 sm:gap-8">
-            {/* Budget */}
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("budgets.budget")}
+                Budget
               </p>
 
-              <p
-                className="
-                  mt-1 text-base font-bold tracking-tight
-                  text-slate-900 dark:text-white sm:text-lg
-                "
-              >
-                {formatCurrency(
-                  monthlySummary.totalBudget,
-                  settings.currency,
-                  language
-                )}
+              <p className="mt-1 text-base font-bold tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                {formatCurrency(monthlySummary.totalBudget, currency, language)}
               </p>
             </div>
 
-            {/* Spent */}
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("budgets.spent")}
+                Spent
               </p>
 
               <p
@@ -410,18 +302,13 @@ const handleConfirmDelete = async () => {
                   }
                 `}
               >
-                {formatCurrency(
-                  monthlySummary.totalSpent,
-                  settings.currency,
-                  language
-                )}
+                {formatCurrency(monthlySummary.totalSpent, currency, language)}
               </p>
             </div>
 
-            {/* Remaining */}
-            <div>
+            <div className="min-w-0">
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {t("budgets.remaining")}
+                Remaining
               </p>
 
               <p
@@ -436,7 +323,7 @@ const handleConfirmDelete = async () => {
               >
                 {formatCurrency(
                   Math.abs(monthlySummary.remaining),
-                  settings.currency,
+                  currency,
                   language
                 )}
               </p>
@@ -448,11 +335,7 @@ const handleConfirmDelete = async () => {
         <div className="mt-7">
           <div className="flex items-center justify-between gap-3 text-xs">
             <span className={`font-semibold ${progressTextClass}`}>
-              {formatNumber(
-                Math.round(monthlySummary.progress),
-                language
-              )}
-              %
+              {formatNumber(Math.round(monthlySummary.progress), language)}%
             </span>
 
             <span
@@ -468,48 +351,47 @@ const handleConfirmDelete = async () => {
               `}
             >
               {isOverBudget
-                ? t("budgets.overBudget")
+                ? "Over budget"
                 : isNearLimit
-                  ? t("budgets.nearLimitMessage")
-                  : t("budgets.availableToSpend")}
+                  ? "You are approaching your budget limit"
+                  : "Available to spend"}
             </span>
           </div>
 
           <div
-            className="
-              mt-2.5 h-2.5 overflow-hidden rounded-full
-              bg-slate-100 dark:bg-slate-800
-            "
+            className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+            role="progressbar"
+            aria-label="Monthly budget usage"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.min(
+              Math.round(monthlySummary.progress),
+              100
+            )}
           >
             <div
-              className={`
-                h-full rounded-full transition-[width]
-                duration-700 ease-out ${progressClass}
-              `}
+              className={`h-full rounded-full transition-[width] duration-700 ease-out ${progressClass}`}
               style={{ width: `${progressWidth}%` }}
             />
           </div>
 
-          {/* Over budget warning */}
           {isOverBudget && (
             <div
               className="
                 mt-4 flex items-start gap-2.5 rounded-xl
                 border border-rose-100 bg-rose-50 px-4 py-3
-                text-xs text-rose-700
-                animate-[budgetWarningIn_300ms_ease-out]
-                dark:border-rose-900/40 dark:bg-rose-950/40
-                dark:text-rose-400
+                text-xs text-rose-700 animate-[budgetWarningIn_300ms_ease-out]
+                dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-400
               "
             >
               <AlertTriangle size={16} className="mt-0.5 shrink-0" />
 
               <p className="leading-5">
-                {t("budgets.overBudgetAmount")}:{" "}
+                Amount over budget:{" "}
                 <span className="font-bold">
                   {formatCurrency(
                     Math.abs(monthlySummary.remaining),
-                    settings.currency,
+                    currency,
                     language
                   )}
                 </span>
@@ -522,22 +404,12 @@ const handleConfirmDelete = async () => {
       {/* Category Budgets */}
       <section>
         <div className="mb-5">
-          <h2
-            className="
-              font-semibold tracking-tight
-              text-slate-900 dark:text-white
-            "
-          >
-            {t("budgets.categoryBudgets")}
+          <h2 className="font-semibold tracking-tight text-slate-900 dark:text-white">
+            Category Budgets
           </h2>
 
-          <p
-            className="
-              mt-1 text-xs leading-5
-              text-slate-500 dark:text-slate-400
-            "
-          >
-            {t("budgets.categoryBudgetsDescription")}
+          <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
+            Review and manage your budget for each category.
           </p>
         </div>
 
@@ -546,11 +418,10 @@ const handleConfirmDelete = async () => {
             className="
               rounded-2xl border border-slate-200 bg-white
               px-6 py-12 text-center text-sm text-slate-500
-              dark:border-slate-800 dark:bg-slate-900
-              dark:text-slate-400
+              dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400
             "
           >
-            {t("common.loading") || "Loading budgets..."}
+            Loading budgets...
           </div>
         ) : currentMonthBudgets.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -573,12 +444,10 @@ const handleConfirmDelete = async () => {
         ) : (
           <div
             className="
-              rounded-2xl border border-dashed
-              border-slate-300 bg-white px-6 py-16
-              text-center shadow-sm transition-all duration-200
-              hover:border-slate-400
-              dark:border-slate-700 dark:bg-slate-900
-              dark:hover:border-slate-600
+              rounded-2xl border border-dashed border-slate-300
+              bg-white px-6 py-16 text-center shadow-sm
+              transition-all duration-200 hover:border-slate-400
+              dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600
             "
           >
             <div
@@ -591,40 +460,28 @@ const handleConfirmDelete = async () => {
               <WalletCards size={22} />
             </div>
 
-            <h3
-              className="
-                mt-4 text-sm font-semibold
-                text-slate-900 dark:text-white
-              "
-            >
-              {t("budgets.noBudgets")}
+            <h3 className="mt-4 text-sm font-semibold text-slate-900 dark:text-white">
+              No budgets yet
             </h3>
 
-            <p
-              className="
-                mx-auto mt-2 max-w-sm text-sm leading-6
-                text-slate-500 dark:text-slate-400
-              "
-            >
-              {t("budgets.noBudgetsDescription")}
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">
+              Create a budget to track your spending and stay within your limits.
             </p>
 
             <button
               type="button"
               onClick={openAddBudget}
               className="
-                mt-5 inline-flex items-center gap-2
-                rounded-xl bg-slate-900 px-4 py-3
-                text-sm font-semibold text-white shadow-sm
-                transition-all duration-200
-                hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-md
-                active:translate-y-0 active:scale-[0.98]
-                dark:bg-slate-100 dark:text-slate-900
+                mt-5 inline-flex items-center gap-2 rounded-xl
+                bg-slate-900 px-4 py-3 text-sm font-semibold text-white
+                shadow-sm transition-all duration-200 hover:-translate-y-0.5
+                hover:bg-slate-800 hover:shadow-md active:translate-y-0
+                active:scale-[0.98] dark:bg-slate-100 dark:text-slate-900
                 dark:hover:bg-white
               "
             >
               <Plus size={17} />
-              {t("budgets.addBudget")}
+              Add Budget
             </button>
           </div>
         )}
@@ -638,17 +495,15 @@ const handleConfirmDelete = async () => {
       />
 
       {/* Delete Confirmation */}
-
-<ConfirmDialog
-  isOpen={Boolean(budgetToDelete)}
-  title={t("budgets.deleteBudget")}
-  message={deleteMessage}
-  onCancel={handleCancelDelete}
-  onConfirm={handleConfirmDelete}
-  isLoading={isDeleting}
-  error={deleteError}
-/>
-
+      <ConfirmDialog
+        isOpen={Boolean(budgetToDelete)}
+        title="Delete Budget"
+        message={deleteMessage}
+        onCancel={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        error={deleteError}
+      />
 
       <style>{`
         @keyframes budgetCardIn {

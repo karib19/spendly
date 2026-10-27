@@ -1,4 +1,3 @@
-
 import { ArrowRight, Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -18,7 +17,7 @@ function RecentTransactions({
     transactionsError,
   } = useExpense();
 
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
 
   const isBangla = language === "bn";
 
@@ -82,16 +81,17 @@ function RecentTransactions({
         dark:hover:shadow-black/20
         sm:p-6
       "
+      lang={isBangla ? "bn" : "en"}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <h2 className="font-semibold tracking-tight text-slate-900 dark:text-white">
-            {t("dashboard.recentTransactions")}
+            Recent Transactions
           </h2>
 
           <p className="mt-1 text-xs leading-5 text-slate-500 dark:text-slate-400">
-            {t("dashboard.latestTransactions")}
+            Your latest transactions
           </p>
         </div>
 
@@ -115,7 +115,7 @@ function RecentTransactions({
                 dark:hover:text-white
               "
             >
-              <span>{t("dashboard.viewAll")}</span>
+              <span>View All</span>
 
               <ArrowRight
                 size={14}
@@ -138,10 +138,7 @@ function RecentTransactions({
           />
 
           <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-            {t("common.loading") ||
-              (isBangla
-                ? "লেনদেনের তথ্য লোড হচ্ছে..."
-                : "Loading transactions...")}
+            Loading transactions...
           </p>
         </div>
       ) : transactionsError ? (
@@ -162,14 +159,11 @@ function RecentTransactions({
           />
 
           <p className="mt-3 text-sm font-medium text-red-700 dark:text-red-300">
-            {t("dashboard.transactionsLoadError") ||
-              (isBangla
-                ? "লেনদেন লোড করা যায়নি।"
-                : "Unable to load transactions.")}
+            Unable to load transactions.
           </p>
 
           <p className="mt-1 text-xs text-red-600 dark:text-red-400">
-            {transactionsError}
+            {String(transactionsError)}
           </p>
         </div>
       ) : recentTransactions.length > 0 ? (
@@ -220,11 +214,11 @@ function RecentTransactions({
           </div>
 
           <p className="mt-4 text-sm font-semibold text-slate-600 dark:text-slate-300">
-            {t("dashboard.noTransactions")}
+            No transactions yet
           </p>
 
           <p className="mx-auto mt-1.5 max-w-xs text-xs leading-5 text-slate-400 dark:text-slate-500">
-            {t("dashboard.noTransactionsDescription")}
+            Start tracking your income and expenses by adding your first transaction.
           </p>
 
           <button
@@ -251,7 +245,7 @@ function RecentTransactions({
             "
           >
             <Plus size={17} />
-            {t("dashboard.addTransaction")}
+            Add Transaction
           </button>
         </div>
       )}

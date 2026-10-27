@@ -8,80 +8,61 @@ import {
 import { useExpense } from "../../context/ExpenseContext";
 import { useLanguage } from "../../context/LanguageContext";
 
-import { getCategoryLabel } from "../../utils/translations";
 import { formatCurrency } from "../../utils/formatCurrency";
 import { formatNumber } from "../../utils/formatNumber";
 
-function TransactionTable({
-  transactions,
-  onEdit,
-  onDelete,
-}) {
-  const { settings } = useExpense();
-  const { t, language } = useLanguage();
+function TransactionTable({ transactions = [], onEdit, onDelete }) {
+  const { settings = {} } = useExpense();
+  const { language } = useLanguage();
+
+  const isBangla = language === "bn";
 
   const formatDate = (date) => {
-    if (!date) {
-      return "—";
-    }
+    if (!date) return "—";
 
-    const [year, month, day] = date
-      .split("-")
-      .map(Number);
+    const parts = String(date).split("-");
+    if (parts.length < 3) return date;
 
-    if (!year || !month || !day) {
-      return date;
-    }
+    const [year, month, day] = parts.map(Number);
 
-    if (language === "bn") {
-      return `${formatNumber(
-        day,
-        language
-      )}-${formatNumber(
+    if (!year || !month || !day) return date;
+
+    if (isBangla) {
+      return `${formatNumber(day, language)}-${formatNumber(
         month,
         language
       )}-${formatNumber(year, language)}`;
     }
 
-    return `${String(day).padStart(
-      2,
-      "0"
-    )}-${String(month).padStart(
+    return `${String(day).padStart(2, "0")}-${String(month).padStart(
       2,
       "0"
     )}-${year}`;
   };
 
-  const formatPaymentMethod = (
-    paymentMethod
-  ) => {
-    if (!paymentMethod) {
-      return "—";
-    }
+  const formatPaymentMethod = (paymentMethod) => {
+    if (!paymentMethod) return "—";
 
-    const normalizedMethod =
-      paymentMethod.trim().toLowerCase();
+    const normalizedMethod = String(paymentMethod).trim().toLowerCase();
 
-    if (language === "bn") {
-      const paymentMethodMap = {
-        cash: "নগদ",
-        bkash: "বিকাশ",
-        nagad: "নগদ",
-        rocket: "রকেট",
-        bank: "ব্যাংক",
-        "bank transfer": "ব্যাংক ট্রান্সফার",
-        card: "কার্ড",
-        "credit card": "ক্রেডিট কার্ড",
-        "debit card": "ডেবিট কার্ড",
-      };
+    if (!isBangla) return paymentMethod;
 
-      return (
-        paymentMethodMap[normalizedMethod] ||
-        paymentMethod
-      );
-    }
+    const paymentMethodMap = {
+      cash: "নগদ",
+      bkash: "বিকাশ",
+      nagad: "নগদ",
+      rocket: "রকেট",
+      bank: "ব্যাংক",
+      "bank transfer": "ব্যাংক ট্রান্সফার",
+      card: "কার্ড",
+      "credit card": "ক্রেডিট কার্ড",
+      "debit card": "ডেবিট কার্ড",
+      mobile_banking: "মোবাইল ব্যাংকিং",
+      mobile: "মোবাইল",
+      other: "অন্যান্য",
+    };
 
-    return paymentMethod;
+    return paymentMethodMap[normalizedMethod] || paymentMethod;
   };
 
   return (
@@ -100,6 +81,7 @@ function TransactionTable({
         dark:hover:shadow-black/20
         md:block
       "
+      lang={isBangla ? "bn" : "en"}
     >
       <div className="overflow-x-auto">
         <table className="w-full min-w-225">
@@ -112,127 +94,60 @@ function TransactionTable({
                 dark:bg-slate-800/60
               "
             >
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-left
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.transaction")}
-              </th>
-
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-left
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.category")}
-              </th>
-
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-left
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.date")}
-              </th>
-
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-left
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.payment")}
-              </th>
-
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-right
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.amount")}
-              </th>
-
-              <th
-                scope="col"
-                className="
-                  px-6 py-4
-                  text-right
-                  text-[11px]
-                  font-bold
-                  uppercase
-                  tracking-[0.08em]
-                  text-slate-500
-                  dark:text-slate-400
-                "
-              >
-                {t("common.actions")}
-              </th>
+              {[
+                "Transaction",
+                "Category",
+                "Date",
+                "Payment",
+                "Amount",
+                "Actions",
+              ].map((heading) => (
+                <th
+                  key={heading}
+                  scope="col"
+                  className={`
+                    px-6 py-4
+                    text-[11px]
+                    font-bold
+                    uppercase
+                    tracking-[0.08em]
+                    text-slate-500
+                    dark:text-slate-400
+                    ${heading === "Amount" || heading === "Actions"
+                      ? "text-right"
+                      : "text-left"}
+                  `}
+                >
+                  {heading}
+                </th>
+              ))}
             </tr>
           </thead>
 
           <tbody>
-            {transactions.map((transaction) => {
-              const isIncome =
-                transaction.type === "income";
+            {transactions.map((transaction, index) => {
+              const isIncome = transaction.type === "income";
+              const title = transaction.title?.trim() || "Untitled";
+              const category = transaction.category?.trim() || "Uncategorized";
 
-              const title =
-                transaction.title?.trim() ||
-                t("common.untitled");
-
-              const category =
-                transaction.category?.trim() ||
-                t("common.uncategorized");
-
-              const date =
-                transaction.date || "—";
+              const date = transaction.date || "—";
 
               const paymentMethod =
-                transaction.paymentMethod?.trim() ||
-                "—";
+                transaction.paymentMethod ??
+                transaction.payment_method ??
+                "";
+
+              const note =
+                transaction.note ??
+                transaction.description ??
+                "";
 
               return (
                 <tr
-                  key={transaction.id}
+                  key={
+                    transaction.id ??
+                    `${transaction.date}-${transaction.title}-${index}`
+                  }
                   className="
                     group
                     border-b border-slate-100
@@ -262,15 +177,9 @@ function TransactionTable({
                         `}
                       >
                         {isIncome ? (
-                          <ArrowUpRight
-                            size={18}
-                            strokeWidth={2}
-                          />
+                          <ArrowUpRight size={18} strokeWidth={2} />
                         ) : (
-                          <ArrowDownLeft
-                            size={18}
-                            strokeWidth={2}
-                          />
+                          <ArrowDownLeft size={18} strokeWidth={2} />
                         )}
                       </div>
 
@@ -289,7 +198,7 @@ function TransactionTable({
                           {title}
                         </p>
 
-                        {transaction.note && (
+                        {note && (
                           <p
                             className="
                               mt-1
@@ -299,9 +208,9 @@ function TransactionTable({
                               text-slate-400
                               dark:text-slate-500
                             "
-                            title={transaction.note}
+                            title={note}
                           >
-                            {transaction.note}
+                            {note}
                           </p>
                         )}
                       </div>
@@ -324,15 +233,9 @@ function TransactionTable({
                         dark:bg-slate-800
                         dark:text-slate-300
                       "
-                      title={getCategoryLabel(
-                        category,
-                        t
-                      )}
+                      title={category}
                     >
-                      {getCategoryLabel(
-                        category,
-                        t
-                      )}
+                      {category}
                     </span>
                   </td>
 
@@ -360,9 +263,7 @@ function TransactionTable({
                       dark:text-slate-400
                     "
                   >
-                    {formatPaymentMethod(
-                      paymentMethod
-                    )}
+                    {formatPaymentMethod(paymentMethod)}
                   </td>
 
                   {/* Amount */}
@@ -384,7 +285,7 @@ function TransactionTable({
                     {isIncome ? "+" : "-"}
                     {formatCurrency(
                       transaction.amount,
-                      settings.currency,
+                      settings.currency || "BDT",
                       language
                     )}
                   </td>
@@ -403,9 +304,7 @@ function TransactionTable({
                     >
                       <button
                         type="button"
-                        onClick={() =>
-                          onEdit(transaction)
-                        }
+                        onClick={() => onEdit?.(transaction)}
                         className="
                           flex h-9 w-9
                           items-center justify-center
@@ -419,19 +318,15 @@ function TransactionTable({
                           dark:hover:bg-slate-700
                           dark:hover:text-white
                         "
-                        aria-label={`${t(
-                          "common.edit"
-                        )} ${title}`}
-                        title={t("common.edit")}
+                        aria-label={`Edit ${title}`}
+                        title="Edit"
                       >
                         <Pencil size={16} />
                       </button>
 
                       <button
                         type="button"
-                        onClick={() =>
-                          onDelete(transaction)
-                        }
+                        onClick={() => onDelete?.(transaction)}
                         className="
                           flex h-9 w-9
                           items-center justify-center
@@ -445,10 +340,8 @@ function TransactionTable({
                           dark:hover:bg-rose-950/50
                           dark:hover:text-rose-400
                         "
-                        aria-label={`${t(
-                          "common.delete"
-                        )} ${title}`}
-                        title={t("common.delete")}
+                        aria-label={`Delete ${title}`}
+                        title="Delete"
                       >
                         <Trash2 size={16} />
                       </button>
