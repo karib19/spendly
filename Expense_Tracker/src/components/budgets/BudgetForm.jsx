@@ -18,7 +18,6 @@ function BudgetForm({ isOpen, onClose, editingBudget }) {
 
   const expenseCategories = categories.expense || [];
   const isEditing = Boolean(editingBudget);
-  const firstExpenseCategory = expenseCategories[0] || "";
 
   const now = new Date();
 
@@ -30,16 +29,18 @@ function BudgetForm({ isOpen, onClose, editingBudget }) {
     if (!isOpen) return;
 
     if (editingBudget) {
+      // Editing: keep the saved category selected.
       setCategory(editingBudget.category || "");
       setAmount(String(editingBudget.amount ?? ""));
     } else {
-      setCategory(firstExpenseCategory);
+      // Creating: require the user to choose a category.
+      setCategory("");
       setAmount("");
     }
 
     setError("");
     setIsSubmitting(false);
-  }, [isOpen, editingBudget, firstExpenseCategory]);
+  }, [isOpen, editingBudget]);
 
   useEffect(() => {
     if (!isOpen) return;

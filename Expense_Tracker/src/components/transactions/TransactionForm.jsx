@@ -362,8 +362,8 @@ function TransactionForm({
                 disabled={isSubmitting}
                 placeholder={
                   type === "income"
-                    ? "e.g. October salary (optional)"
-                    : "e.g. Grocery shopping (optional)"
+                    ? "e.g. October salary"
+                    : "e.g. Grocery shopping"
                 }
                 className="
                   w-full rounded-xl border border-slate-200 bg-white
